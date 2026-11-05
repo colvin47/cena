@@ -1,1 +1,1 @@
-{"routes":[{"path":"/","title":"Início"},{"path":"/buscar","title":"Buscar"},{"path":"/eventos","title":"Eventos"},{"path":"/biblioteca","title":"Biblioteca"},{"path":"/perfil","title":"Perfil"},{"path":"/enviar","title":"Enviar som"}]}
+{"routes":[{"path":"/","title":"Início"},{"path":"/buscar","title":"Buscar"},{"path":"/eventos","title":"Eventos"},{"path":"/biblioteca","title":"Biblioteca"},{"path":"/perfil","title":"Perfil"},{"path":"/artistas/:handle","title":"Perfil de artista"},{"path":"/enviar","title":"Enviar som"}]}

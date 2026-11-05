@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, like, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   artists,
@@ -6,6 +6,7 @@ import {
   events,
   follows,
   InsertUser,
+  playlistTracks,
   playlists,
   trackPlays,
   tracks,
@@ -80,13 +81,30 @@ export async function setAccountType(userId: number, accountType: "listener" | "
   return true;
 }
 
+export async function getArtistByOwnerId(ownerId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(artists).where(eq(artists.ownerId, ownerId)).limit(1);
+  return result[0];
+}
+
+export async function createArtistProfile(ownerId: number, input: { name: string; handle: string; city: string; genre?: string; bio?: string }) {
+  const db = await getDb();
+  if (!db) return null;
+  const existing = await getArtistByOwnerId(ownerId);
+  if (existing) return existing;
+  const result = await db.insert(artists).values({ ownerId, name: input.name, handle: input.handle, city: input.city, genre: input.genre || null, bio: input.bio || null });
+  const created = await db.select().from(artists).where(eq(artists.id, Number(result[0].insertId))).limit(1);
+  return created[0] ?? null;
+}
+
 export async function findArtists(searchTerm?: string, city?: string) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
   if (searchTerm) {
     const pattern = `%${searchTerm}%`;
-    conditions.push(or(like(artists.name, pattern), like(artists.genre, pattern), like(artists.city, pattern)));
+    conditions.push(or(like(artists.name, pattern), like(artists.handle, pattern), like(artists.genre, pattern), like(artists.city, pattern)));
   }
   if (city) conditions.push(eq(artists.city, city));
   return db.select().from(artists).where(conditions.length ? and(...conditions) : undefined).orderBy(asc(artists.name)).limit(50);
@@ -98,7 +116,7 @@ export async function findTracks(searchTerm?: string, genre?: string, city?: str
   const conditions = [];
   if (searchTerm) {
     const pattern = `%${searchTerm}%`;
-    conditions.push(or(like(tracks.title, pattern), like(tracks.album, pattern), like(tracks.genre, pattern), like(tracks.city, pattern)));
+    conditions.push(or(like(tracks.title, pattern), like(tracks.album, pattern), like(tracks.genre, pattern), like(tracks.city, pattern), like(artists.name, pattern), like(artists.handle, pattern)));
   }
   if (genre && genre !== "Tudo") conditions.push(eq(tracks.genre, genre));
   if (city) conditions.push(eq(tracks.city, city));
@@ -118,6 +136,8 @@ export async function findTracks(searchTerm?: string, genre?: string, city?: str
 export async function listEvents(city?: string) {
   const db = await getDb();
   if (!db) return [];
+  const conditions = [gte(events.eventDate, new Date())];
+  if (city) conditions.push(eq(events.city, city));
   return db.select({
     id: events.id,
     title: events.name,
@@ -128,7 +148,8 @@ export async function listEvents(city?: string) {
     ticketUrl: events.ticketUrl,
     artistId: events.artistId,
     artist: artists.name,
-  }).from(events).innerJoin(artists, eq(events.artistId, artists.id)).where(city ? eq(events.city, city) : undefined).orderBy(asc(events.eventDate)).limit(50);
+    interest: count(eventInterests.eventId),
+  }).from(events).innerJoin(artists, eq(events.artistId, artists.id)).leftJoin(eventInterests, eq(eventInterests.eventId, events.id)).where(and(...conditions)).groupBy(events.id, artists.name).orderBy(asc(events.eventDate)).limit(50);
 }
 
 export async function toggleFollow(userId: number, artistId: number) {
@@ -169,6 +190,22 @@ export async function createPlaylist(userId: number, name: string, collaborative
   return Number(result[0].insertId);
 }
 
+export async function addTrackToPlaylist(userId: number, playlistId: number, trackId: number) {
+  const db = await getDb();
+  if (!db) return { ok: false as const, reason: "DATABASE" as const };
+  const playlist = await db.select({ ownerId: playlists.ownerId, collaborative: playlists.collaborative }).from(playlists).where(eq(playlists.id, playlistId)).limit(1);
+  if (!playlist[0]) return { ok: false as const, reason: "NOT_FOUND" as const };
+  if (playlist[0].ownerId !== userId && !playlist[0].collaborative) return { ok: false as const, reason: "FORBIDDEN" as const };
+  const track = await db.select({ id: tracks.id }).from(tracks).where(eq(tracks.id, trackId)).limit(1);
+  if (!track[0]) return { ok: false as const, reason: "TRACK_NOT_FOUND" as const };
+  const existing = await db.select().from(playlistTracks).where(and(eq(playlistTracks.playlistId, playlistId), eq(playlistTracks.trackId, trackId))).limit(1);
+  if (existing.length) return { ok: true as const, added: false };
+  const last = await db.select({ position: playlistTracks.position }).from(playlistTracks).where(eq(playlistTracks.playlistId, playlistId)).orderBy(desc(playlistTracks.position)).limit(1);
+  await db.insert(playlistTracks).values({ playlistId, trackId, addedBy: userId, position: (last[0]?.position ?? -1) + 1 });
+  await db.update(playlists).set({ updatedAt: new Date() }).where(eq(playlists.id, playlistId));
+  return { ok: true as const, added: true };
+}
+
 export async function getUserLibrary(userId: number) {
   const db = await getDb();
   if (!db) return null;
@@ -177,9 +214,13 @@ export async function getUserLibrary(userId: number) {
     db.select({ eventId: eventInterests.eventId }).from(eventInterests).where(eq(eventInterests.userId, userId)),
     db.select({ id: playlists.id, name: playlists.name, collaborative: playlists.collaborative }).from(playlists).where(eq(playlists.ownerId, userId)).orderBy(desc(playlists.updatedAt)),
   ]);
+  const playlistsWithTracks = await Promise.all(playlistRows.map(async playlist => {
+    const rows = await db.select({ trackId: playlistTracks.trackId }).from(playlistTracks).where(eq(playlistTracks.playlistId, playlist.id)).orderBy(asc(playlistTracks.position));
+    return { ...playlist, trackIds: rows.map(row => row.trackId) };
+  }));
   return {
     followedArtistIds: followRows.map(row => row.artistId),
     interestedEventIds: interestRows.map(row => row.eventId),
-    playlists: playlistRows,
+    playlists: playlistsWithTracks,
   };
 }
