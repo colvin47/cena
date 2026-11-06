@@ -14,9 +14,12 @@ function Router() {
       <Route path={"/buscar"} component={Home} />
       <Route path={"/eventos"} component={Home} />
       <Route path={"/biblioteca"} component={Home} />
-      <Route path={"/perfil"} component={Home} />
-      <Route path={"/artistas/:handle"} component={Home} />
-      <Route path={"/enviar"} component={Home} />
+      <Route path="/perfil" component={Home} />
+      <Route path="/artistas/:handle" component={Home} />
+      <Route path="/faixas/:id" component={Home} />
+      <Route path="/eventos/:id" component={Home} />
+      <Route path="/playlists/:id" component={Home} />
+      <Route path="/enviar" component={Home} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
