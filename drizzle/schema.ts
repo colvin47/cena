@@ -158,6 +158,19 @@ export const trackPlays = mysqlTable(
   }),
 );
 
+export const savedTracks = mysqlTable(
+  "savedTracks",
+  {
+    userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    trackId: int("trackId").notNull().references(() => tracks.id, { onDelete: "cascade" }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    pk: primaryKey({ columns: [table.userId, table.trackId] }),
+    trackIdx: index("idx_saved_tracks_track").on(table.trackId),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Artist = typeof artists.$inferSelect;
@@ -176,3 +189,5 @@ export type EventInterest = typeof eventInterests.$inferSelect;
 export type InsertEventInterest = typeof eventInterests.$inferInsert;
 export type TrackPlay = typeof trackPlays.$inferSelect;
 export type InsertTrackPlay = typeof trackPlays.$inferInsert;
+export type SavedTrack = typeof savedTracks.$inferSelect;
+export type InsertSavedTrack = typeof savedTracks.$inferInsert;

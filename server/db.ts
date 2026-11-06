@@ -8,6 +8,7 @@ import {
   InsertUser,
   playlistTracks,
   playlists,
+  savedTracks,
   trackPlays,
   tracks,
   users,
@@ -183,6 +184,20 @@ export async function recordTrackPlay(trackId: number, userId?: number) {
   return true;
 }
 
+export async function toggleSavedTrack(userId: number, trackId: number) {
+  const db = await getDb();
+  if (!db) return { saved: false, persisted: false };
+  const track = await db.select({ id: tracks.id }).from(tracks).where(eq(tracks.id, trackId)).limit(1);
+  if (!track[0]) return { saved: false, persisted: true, missing: true };
+  const existing = await db.select().from(savedTracks).where(and(eq(savedTracks.userId, userId), eq(savedTracks.trackId, trackId))).limit(1);
+  if (existing.length) {
+    await db.delete(savedTracks).where(and(eq(savedTracks.userId, userId), eq(savedTracks.trackId, trackId)));
+    return { saved: false, persisted: true };
+  }
+  await db.insert(savedTracks).values({ userId, trackId });
+  return { saved: true, persisted: true };
+}
+
 export async function createPlaylist(userId: number, name: string, collaborative: boolean) {
   const db = await getDb();
   if (!db) return null;
@@ -209,10 +224,11 @@ export async function addTrackToPlaylist(userId: number, playlistId: number, tra
 export async function getUserLibrary(userId: number) {
   const db = await getDb();
   if (!db) return null;
-  const [followRows, interestRows, playlistRows] = await Promise.all([
+  const [followRows, interestRows, playlistRows, savedRows] = await Promise.all([
     db.select({ artistId: follows.artistId }).from(follows).where(eq(follows.followerId, userId)),
     db.select({ eventId: eventInterests.eventId }).from(eventInterests).where(eq(eventInterests.userId, userId)),
     db.select({ id: playlists.id, name: playlists.name, collaborative: playlists.collaborative }).from(playlists).where(eq(playlists.ownerId, userId)).orderBy(desc(playlists.updatedAt)),
+    db.select({ trackId: savedTracks.trackId }).from(savedTracks).where(eq(savedTracks.userId, userId)),
   ]);
   const playlistsWithTracks = await Promise.all(playlistRows.map(async playlist => {
     const rows = await db.select({ trackId: playlistTracks.trackId }).from(playlistTracks).where(eq(playlistTracks.playlistId, playlist.id)).orderBy(asc(playlistTracks.position));
@@ -221,6 +237,7 @@ export async function getUserLibrary(userId: number) {
   return {
     followedArtistIds: followRows.map(row => row.artistId),
     interestedEventIds: interestRows.map(row => row.eventId),
+    savedTrackIds: savedRows.map(row => row.trackId),
     playlists: playlistsWithTracks,
   };
 }

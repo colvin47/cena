@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { artists, events, tracks } from "../drizzle/schema";
-import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getDb, getUserLibrary, listEvents, recordTrackPlay, setAccountType, toggleEventInterest, toggleFollow } from "./db";
+import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getDb, getUserLibrary, listEvents, recordTrackPlay, setAccountType, toggleEventInterest, toggleFollow, toggleSavedTrack } from "./db";
 import { storagePresignPut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -24,10 +24,16 @@ function filterSeed(input: z.infer<typeof discoveryInput>) {
     return matchesCity && matchesGenre && (!query || haystack.includes(query));
   });
   const artistsResult = sceneArtists.filter(artist => {
-    const haystack = `${artist.name} ${artist.genre} ${artist.city}`.toLowerCase();
-    return !query || haystack.includes(query);
+    const matchesCity = !input.city || artist.city.toLowerCase().includes(input.city.toLowerCase());
+    const haystack = `${artist.name} ${artist.handle} ${artist.genre} ${artist.city}`.toLowerCase();
+    return matchesCity && (!query || haystack.includes(query));
   });
-  return { tracks: tracksResult, artists: artistsResult, events: sceneEvents, source: "seed" as const };
+  const eventsResult = sceneEvents.filter(event => {
+    const matchesCity = !input.city || event.city.toLowerCase().includes(input.city.toLowerCase());
+    const haystack = `${event.title} ${event.place} ${event.city}`.toLowerCase();
+    return matchesCity && (!query || haystack.includes(query));
+  });
+  return { tracks: tracksResult, artists: artistsResult, events: eventsResult, source: "seed" as const };
 }
 
 export const appRouter = router({
@@ -89,6 +95,11 @@ export const appRouter = router({
 
     followArtist: protectedProcedure.input(z.object({ artistId: z.number().int().positive() })).mutation(async ({ ctx, input }) => ({ followed: await toggleFollow(ctx.user.id, input.artistId) })),
     interestEvent: protectedProcedure.input(z.object({ eventId: z.number().int().positive() })).mutation(async ({ ctx, input }) => ({ interested: await toggleEventInterest(ctx.user.id, input.eventId) })),
+    saveTrack: protectedProcedure.input(z.object({ trackId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const result = await toggleSavedTrack(ctx.user.id, input.trackId);
+      if (result.missing) throw new TRPCError({ code: "NOT_FOUND", message: "Essa faixa não está disponível para salvar." });
+      return result;
+    }),
     recordPlay: publicProcedure.input(z.object({ trackId: z.number().int().positive() })).mutation(async ({ ctx, input }) => ({ recorded: await recordTrackPlay(input.trackId, ctx.user?.id) })),
 
     requestUpload: protectedProcedure.input(z.object({ kind: z.enum(["audio", "image"]), fileName: z.string().trim().min(1).max(180), contentType: z.string().trim().min(1).max(120), size: z.number().int().positive() })).mutation(async ({ ctx, input }) => {

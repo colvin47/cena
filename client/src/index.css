@@ -63,6 +63,7 @@ a { color: inherit; text-decoration: none; }
 .top-actions { display: flex; align-items: center; gap: 14px; }
 .icon-button { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; background: var(--plum-850); border: 1px solid var(--line); border-radius: 12px; color: var(--ink); transition: .2s ease; }
 .icon-button:hover { border-color: rgba(200,243,106,.45); color: var(--lime); transform: translateY(-1px); }
+.icon-button.is-saved { color: var(--lime); border-color: rgba(200,243,106,.45); background: rgba(200,243,106,.08); }
 .icon-button.quiet { width: 28px; height: 28px; background: transparent; border-color: transparent; color: var(--muted); }
 .notification-button { position: relative; }
 .notification-button span { position: absolute; top: 6px; right: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--coral); }

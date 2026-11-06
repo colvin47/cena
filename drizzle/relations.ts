@@ -7,6 +7,7 @@ import {
   playlistTracks,
   playlists,
   trackPlays,
+  savedTracks,
   tracks,
   users,
 } from "./schema";
@@ -17,6 +18,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   follows: many(follows),
   eventInterests: many(eventInterests),
   trackPlays: many(trackPlays),
+  savedTracks: many(savedTracks),
 }));
 
 export const artistsRelations = relations(artists, ({ one, many }) => ({
@@ -30,6 +32,7 @@ export const tracksRelations = relations(tracks, ({ one, many }) => ({
   artist: one(artists, { fields: [tracks.artistId], references: [artists.id] }),
   playlistTracks: many(playlistTracks),
   plays: many(trackPlays),
+  savedBy: many(savedTracks),
 }));
 
 export const eventsRelations = relations(events, ({ one, many }) => ({
@@ -61,4 +64,9 @@ export const eventInterestsRelations = relations(eventInterests, ({ one }) => ({
 export const trackPlaysRelations = relations(trackPlays, ({ one }) => ({
   track: one(tracks, { fields: [trackPlays.trackId], references: [tracks.id] }),
   user: one(users, { fields: [trackPlays.userId], references: [users.id] }),
+}));
+
+export const savedTracksRelations = relations(savedTracks, ({ one }) => ({
+  user: one(users, { fields: [savedTracks.userId], references: [users.id] }),
+  track: one(tracks, { fields: [savedTracks.trackId], references: [tracks.id] }),
 }));
