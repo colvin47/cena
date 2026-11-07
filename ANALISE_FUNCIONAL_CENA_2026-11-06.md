@@ -353,3 +353,8 @@ O painel de eventos do artista passou a permitir edição inline e exclusão com
 ## 11. Quarto ciclo implementado
 
 A Home passou a apresentar uma curadoria local explicável, com recomendações acompanhadas da razão “novo em [cidade]” e CTA direto para ouvir. O upload passou a tentar extrair automaticamente a duração do áudio antes de publicar. A fila ganhou painel visual para abrir, revisar e remover faixas, mantendo a contagem acessível no player.
+
+
+## 12. Limpeza de uploads órfãos
+
+O fluxo de publicação agora guarda os caminhos dos objetos enviados durante a sessão. Se a criação da faixa falhar depois do upload do áudio ou da capa, o frontend chama um endpoint protegido que valida o prefixo pertencente ao artista e solicita a remoção dos objetos temporários. A limpeza é best-effort e não substitui o erro original apresentado ao usuário. O contrato de storage foi isolado em `storageDelete`, facilitando a troca do endpoint de exclusão caso a infraestrutura de armazenamento utilize outra rota.

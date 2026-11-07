@@ -316,6 +316,7 @@ export default function Home() {
   const deleteEventMutation = trpc.scene.deleteEvent.useMutation();
   const updateEventMutation = trpc.scene.updateEvent.useMutation();
   const uploadUrlMutation = trpc.scene.requestUpload.useMutation();
+  const cleanupUploadMutation = trpc.scene.cleanupUpload.useMutation();
   const trackMutation = trpc.scene.createTrack.useMutation();
   const artistProfileMutation = trpc.scene.createArtistProfile.useMutation();
   const updateArtistProfileMutation = trpc.scene.updateArtistProfile.useMutation();
@@ -443,11 +444,13 @@ export default function Home() {
     if (!uploadDraft.audio || !uploadDraft.rights) { toast.error("Escolha um áudio e confirme os direitos autorais."); return; }
     if (!uploadDraft.audio.type.startsWith("audio/") || uploadDraft.audio.size > 50 * 1024 * 1024) { toast.error("Use um áudio compatível de até 50 MB."); return; }
     if (uploadDraft.cover && (uploadDraft.cover.size > 10 * 1024 * 1024 || !uploadDraft.cover.type.startsWith("image/"))) { toast.error("A capa deve ser uma imagem de até 10 MB."); return; }
+    const uploadedPaths: string[] = [];
     try {
       setUploadStatus("Enviando áudio...");
       const audioRequest = await uploadUrlMutation.mutateAsync({ kind: "audio", fileName: uploadDraft.audio.name, contentType: uploadDraft.audio.type || "audio/mpeg", size: uploadDraft.audio.size });
       const audioResponse = await fetch(audioRequest.url, { method: "PUT", headers: { "Content-Type": uploadDraft.audio.type || "audio/mpeg" }, body: uploadDraft.audio });
       if (!audioResponse.ok) throw new Error("Falha no upload do áudio");
+      uploadedPaths.push(audioRequest.stableUrl);
       setUploadStatus("Áudio enviado. Validando capa...");
       let coverUrl: string | undefined;
       if (uploadDraft.cover) {
@@ -455,6 +458,7 @@ export default function Home() {
         const coverResponse = await fetch(coverRequest.url, { method: "PUT", headers: { "Content-Type": uploadDraft.cover.type || "image/jpeg" }, body: uploadDraft.cover });
         if (!coverResponse.ok) throw new Error("Falha no upload da capa");
         coverUrl = coverRequest.stableUrl;
+        uploadedPaths.push(coverRequest.stableUrl);
       }
       setUploadStatus("Lendo duração do áudio...");
       const durationSeconds = await new Promise<number>(resolve => { const audio = new Audio(); const url = URL.createObjectURL(uploadDraft.audio!); audio.onloadedmetadata = () => { resolve(Math.round(audio.duration || 0)); URL.revokeObjectURL(url); }; audio.onerror = () => { resolve(0); URL.revokeObjectURL(url); }; audio.src = url; });
@@ -465,7 +469,7 @@ export default function Home() {
       setUploadStatus("");
       setUploadDraft({ title: "", album: "", genre: "Alt pop", city: "Campinas", description: "", rights: false, audio: null, cover: null });
       setView("home");
-    } catch (error) { setUploadStatus(""); toast.error(error instanceof Error ? error.message : "Não foi possível concluir o upload."); }
+    } catch (error) { if (uploadedPaths.length) cleanupUploadMutation.mutate({ paths: uploadedPaths }); setUploadStatus(""); toast.error(error instanceof Error ? error.message : "Não foi possível concluir o upload."); }
   };
 
   const navItems: Array<{ id: View; label: string; icon: typeof HomeIcon }> = [{ id: "home", label: "Início", icon: HomeIcon }, { id: "search", label: "Buscar", icon: Search }, { id: "events", label: "Eventos", icon: CalendarDays }, { id: "library", label: "Biblioteca", icon: ListMusic }, { id: "profile", label: "Perfil", icon: UserRound }];

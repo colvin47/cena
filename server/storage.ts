@@ -117,3 +117,17 @@ export async function storageGetSignedUrl(relKey: string): Promise<string> {
   if (!url) throw new Error("Storage did not return a download URL");
   return url;
 }
+
+/** Remove um objeto temporário criado pelo fluxo de upload. O endpoint é best-effort:
+ * uma falha de limpeza não deve mascarar o erro original da publicação. */
+export async function storageDelete(relKey: string): Promise<boolean> {
+  const { forgeUrl, forgeKey } = getForgeConfig();
+  const key = normalizeKey(relKey);
+  const deleteUrl = new URL("v1/storage/delete", forgeUrl + "/");
+  deleteUrl.searchParams.set("path", key);
+  const response = await fetch(deleteUrl, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${forgeKey}` },
+  });
+  return response.ok;
+}

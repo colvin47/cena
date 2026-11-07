@@ -4,7 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { artists, events, tracks } from "../drizzle/schema";
 import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listArtistEvents, listEvents, recordTrackPlay, setAccountType, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistEvent, updateArtistProfile, deleteArtistEvent } from "./db";
-import { storagePresignPut } from "./storage";
+import { storageDelete, storagePresignPut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -132,6 +132,13 @@ export const appRouter = router({
       return storagePresignPut(`cena/${ctx.user.id}/${input.kind}/${Date.now()}-${safeName}`, input.contentType.toLowerCase());
     }),
 
+    cleanupUpload: protectedProcedure.input(z.object({ paths: z.array(z.string().trim().min(1).max(2048)).max(2) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem limpar uploads." });
+      const prefix = `/manus-storage/cena/${ctx.user.id}/`;
+      const ownedPaths = input.paths.filter(path => path.startsWith(prefix));
+      const results = await Promise.allSettled(ownedPaths.map(path => storageDelete(path.replace(/^\/manus-storage\//, ""))));
+      return { attempted: ownedPaths.length, removed: results.filter(result => result.status === "fulfilled" && result.value).length };
+    }),
     createPlaylist: protectedProcedure.input(z.object({ name: z.string().trim().min(1).max(160), collaborative: z.boolean().default(false) })).mutation(async ({ ctx, input }) => {
       const id = await createPlaylist(ctx.user.id, input.name, input.collaborative);
       return { id, name: input.name, collaborative: input.collaborative, persisted: id !== null };
