@@ -83,6 +83,13 @@ export async function setAccountType(userId: number, accountType: "listener" | "
   return true;
 }
 
+export async function updateListenerProfile(userId: number, input: { city: string; favoriteGenres?: string; publicBio?: string }) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(users).set({ city: input.city, favoriteGenres: input.favoriteGenres || null, publicBio: input.publicBio || null, updatedAt: new Date() }).where(eq(users.id, userId));
+  return true;
+}
+
 export async function getArtistByOwnerId(ownerId: number) {
   const db = await getDb();
   if (!db) return undefined;

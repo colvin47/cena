@@ -364,3 +364,11 @@ O fluxo de publicação agora guarda os caminhos dos objetos enviados durante a 
 Foram adicionados: status de moderação reversível para takedown de faixas, notificações persistentes para seguidores em novos lançamentos e eventos, aviso de moderação ao artista, painel de notificações, metadados SEO/OpenGraph, link canônico, foco visível e skip link de acessibilidade, além de manifest e service worker para instalação como PWA no Android.
 
 O site não contém um APK nativo neste checkpoint. A instalação disponível é PWA: no Chrome Android, o usuário pode usar o menu do navegador e escolher “Adicionar à tela inicial”. Um APK exigirá um artefato Android separado, assinado e publicado em um endereço de download.
+
+## 14. Correção de experiência no Android
+
+A interface mobile foi ajustada para impedir rolagem horizontal: artistas e playlists agora ocupam uma única coluna, imagens e blocos respeitam a largura disponível e o conteúdo segue uma leitura vertical. As ações “Ver tudo” continuam abrindo rotas específicas para detalhes.
+
+O menu móvel agora inclui “Instalar CENA.”. Quando o navegador Android disponibiliza o prompt PWA, ele é acionado diretamente; caso contrário, a interface orienta o usuário a usar “Adicionar à tela inicial”.
+
+Após o login, o papel de ouvinte apresenta o formulário persistente “Perfil de público”, com cidade, gêneros favoritos e bio. O papel de artista continua em fluxo separado, com nome artístico, @, bio, uploads, eventos e Estúdio do Artista.

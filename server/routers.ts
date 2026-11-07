@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { artists, events, follows, notifications, tracks } from "../drizzle/schema";
-import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listArtistEvents, listEvents, listNotifications, markNotificationsRead, recordTrackPlay, setAccountType, takedownTrack, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistEvent, updateArtistProfile, deleteArtistEvent } from "./db";
+import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listArtistEvents, listEvents, listNotifications, markNotificationsRead, recordTrackPlay, setAccountType, takedownTrack, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistEvent, updateArtistProfile, updateListenerProfile, deleteArtistEvent } from "./db";
 import { storageDelete, storagePresignPut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -75,6 +75,7 @@ export const appRouter = router({
       const updated = await setAccountType(ctx.user.id, input.accountType);
       return { accountType: input.accountType, persisted: updated };
     }),
+    updateListenerProfile: protectedProcedure.input(z.object({ city: z.string().trim().min(2).max(120), favoriteGenres: z.string().trim().max(255).optional(), publicBio: z.string().trim().max(500).optional() })).mutation(async ({ ctx, input }) => ({ persisted: await updateListenerProfile(ctx.user.id, input) })),
 
     library: protectedProcedure.query(({ ctx }) => getUserLibrary(ctx.user.id)),
     notifications: protectedProcedure.query(({ ctx }) => listNotifications(ctx.user.id)),
