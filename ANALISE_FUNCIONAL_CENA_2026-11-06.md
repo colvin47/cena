@@ -386,3 +386,7 @@ Fontes consultadas: a documentação do Chrome explica que o seletor de arquivos
 O envio foi alterado para uma rota same-origin (`/api/upload`). O navegador envia o áudio ou a capa ao próprio servidor CENA; o servidor autentica a sessão, confirma que a conta é artista, valida extensão, MIME e tamanho, solicita a URL temporária ao storage e grava o arquivo sem expor a URL S3 ao navegador. Essa mudança elimina a dependência de CORS do domínio temporário e evita que o erro de rede apareça como “Failed to fetch” no Android.
 
 O Estúdio do Artista agora exibe diretamente o botão “Enviar nova faixa”. A escolha Ouvinte ou Artista/Banda no modal de acesso passou a iniciar o fluxo com um único toque, em vez de exigir selecionar o cartão e depois clicar novamente em Continuar.
+
+## 17. Player fixo sem sobreposição
+
+O player foi redesenhado como uma barra compacta e fixa. No desktop, ele ocupa menos altura e o conteúdo reserva espaço inferior próprio. No Android/PWA, ele fica acima da navegação inferior, respeita `safe-area-inset-bottom`, usa capa e controles menores e reserva espaço suficiente no fluxo vertical para que cards, formulários e botões não fiquem escondidos atrás da barra.
