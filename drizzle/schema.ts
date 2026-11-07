@@ -59,6 +59,9 @@ export const tracks = mysqlTable(
     durationSeconds: int("durationSeconds"),
     rightsDeclared: boolean("rightsDeclared").default(false).notNull(),
     rightsDeclaredAt: timestamp("rightsDeclaredAt"),
+    moderationStatus: mysqlEnum("moderationStatus", ["published", "pending_review", "takedown"]).default("published").notNull(),
+    takedownReason: text("takedownReason"),
+    removedAt: timestamp("removedAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
@@ -171,6 +174,21 @@ export const savedTracks = mysqlTable(
   }),
 );
 
+export const notifications = mysqlTable(
+  "notifications",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: mysqlEnum("kind", ["release", "event", "moderation", "system"]).notNull(),
+    title: varchar("title", { length: 220 }).notNull(),
+    body: text("body").notNull(),
+    href: varchar("href", { length: 255 }),
+    readAt: timestamp("readAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({ userDateIdx: index("idx_notifications_user_date").on(table.userId, table.createdAt) }),
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Artist = typeof artists.$inferSelect;
@@ -191,3 +209,5 @@ export type TrackPlay = typeof trackPlays.$inferSelect;
 export type InsertTrackPlay = typeof trackPlays.$inferInsert;
 export type SavedTrack = typeof savedTracks.$inferSelect;
 export type InsertSavedTrack = typeof savedTracks.$inferInsert;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;

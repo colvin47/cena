@@ -358,3 +358,9 @@ A Home passou a apresentar uma curadoria local explicável, com recomendações 
 ## 12. Limpeza de uploads órfãos
 
 O fluxo de publicação agora guarda os caminhos dos objetos enviados durante a sessão. Se a criação da faixa falhar depois do upload do áudio ou da capa, o frontend chama um endpoint protegido que valida o prefixo pertencente ao artista e solicita a remoção dos objetos temporários. A limpeza é best-effort e não substitui o erro original apresentado ao usuário. O contrato de storage foi isolado em `storageDelete`, facilitando a troca do endpoint de exclusão caso a infraestrutura de armazenamento utilize outra rota.
+
+## 13. Rodada de prontidão para testes
+
+Foram adicionados: status de moderação reversível para takedown de faixas, notificações persistentes para seguidores em novos lançamentos e eventos, aviso de moderação ao artista, painel de notificações, metadados SEO/OpenGraph, link canônico, foco visível e skip link de acessibilidade, além de manifest e service worker para instalação como PWA no Android.
+
+O site não contém um APK nativo neste checkpoint. A instalação disponível é PWA: no Chrome Android, o usuário pode usar o menu do navegador e escolher “Adicionar à tela inicial”. Um APK exigirá um artefato Android separado, assinado e publicado em um endereço de download.

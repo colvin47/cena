@@ -8,6 +8,7 @@ import {
   InsertUser,
   playlistTracks,
   playlists,
+  notifications,
   savedTracks,
   trackPlays,
   tracks,
@@ -125,7 +126,7 @@ export async function getArtistStats(ownerId: number) {
 export async function getTrackDetail(trackId: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select({ id: tracks.id, title: tracks.title, artistId: tracks.artistId, artist: artists.name, handle: artists.handle, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, description: tracks.description }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(eq(tracks.id, trackId)).limit(1);
+  const result = await db.select({ id: tracks.id, title: tracks.title, artistId: tracks.artistId, artist: artists.name, handle: artists.handle, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, description: tracks.description }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.id, trackId), eq(tracks.moderationStatus, "published"))).limit(1);
   return result[0] ?? null;
 }
 
@@ -168,7 +169,32 @@ export async function findTracks(searchTerm?: string, genre?: string, city?: str
     cover: tracks.coverUrl,
     audioUrl: tracks.audioUrl,
     artist: artists.name,
-  }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(tracks.createdAt)).limit(50);
+  }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.moderationStatus, "published"), ...(conditions.length ? conditions : []))).orderBy(desc(tracks.createdAt)).limit(50);
+}
+
+export async function listNotifications(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)).limit(30);
+}
+
+export async function markNotificationsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(notifications).set({ readAt: new Date() }).where(eq(notifications.userId, userId));
+  return true;
+}
+
+export async function takedownTrack(ownerId: number, trackId: number, reason?: string) {
+  const db = await getDb();
+  if (!db) return false;
+  const artist = await getArtistByOwnerId(ownerId);
+  if (!artist) return false;
+  const result = await db.update(tracks).set({ moderationStatus: "takedown", takedownReason: reason || "Removida pelo artista", removedAt: new Date(), updatedAt: new Date() }).where(and(eq(tracks.id, trackId), eq(tracks.artistId, artist.id), eq(tracks.moderationStatus, "published")));
+  if (Number(result[0]?.affectedRows ?? 0) > 0) {
+    await db.insert(notifications).values({ userId: artist.ownerId, kind: "moderation", title: "Faixa removida da publicação", body: reason || "A faixa foi retirada do ar e não aparece mais na descoberta pública.", href: "/perfil" });
+  }
+  return Number(result[0]?.affectedRows ?? 0) > 0;
 }
 
 export async function listEvents(city?: string) {

@@ -2,8 +2,8 @@ import { sceneArtists, sceneActivity, sceneEvents, sceneGenres, scenePlaylists, 
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { artists, events, tracks } from "../drizzle/schema";
-import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listArtistEvents, listEvents, recordTrackPlay, setAccountType, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistEvent, updateArtistProfile, deleteArtistEvent } from "./db";
+import { artists, events, follows, notifications, tracks } from "../drizzle/schema";
+import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listArtistEvents, listEvents, listNotifications, markNotificationsRead, recordTrackPlay, setAccountType, takedownTrack, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistEvent, updateArtistProfile, deleteArtistEvent } from "./db";
 import { storageDelete, storagePresignPut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -77,6 +77,8 @@ export const appRouter = router({
     }),
 
     library: protectedProcedure.query(({ ctx }) => getUserLibrary(ctx.user.id)),
+    notifications: protectedProcedure.query(({ ctx }) => listNotifications(ctx.user.id)),
+    markNotificationsRead: protectedProcedure.mutation(({ ctx }) => markNotificationsRead(ctx.user.id)),
 
     myArtistProfile: protectedProcedure.query(({ ctx }) => getArtistByOwnerId(ctx.user.id)),
     artistStats: protectedProcedure.query(({ ctx }) => getArtistStats(ctx.user.id)),
@@ -116,6 +118,12 @@ export const appRouter = router({
       const result = await toggleSavedTrack(ctx.user.id, input.trackId);
       if (result.missing) throw new TRPCError({ code: "NOT_FOUND", message: "Essa faixa não está disponível para salvar." });
       return result;
+    }),
+    takedownTrack: protectedProcedure.input(z.object({ trackId: z.number().int().positive(), reason: z.string().trim().max(500).optional() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem remover suas faixas." });
+      const removed = await takedownTrack(ctx.user.id, input.trackId, input.reason);
+      if (!removed) throw new TRPCError({ code: "NOT_FOUND", message: "Faixa não encontrada ou já removida." });
+      return { removed: true };
     }),
     recordPlay: publicProcedure.input(z.object({ trackId: z.number().int().positive() })).mutation(async ({ ctx, input }) => ({ recorded: await recordTrackPlay(input.trackId, ctx.user?.id) })),
 
@@ -170,6 +178,8 @@ export const appRouter = router({
       const owner = await db.select({ id: artists.id }).from(artists).where(eq(artists.ownerId, ctx.user.id)).limit(1);
       if (!owner[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Crie seu perfil de artista antes de criar um evento." });
       const result = await db.insert(events).values({ ...input, artistId: owner[0].id, eventDate: new Date(input.eventDate) });
+      const followers = await db.select({ userId: follows.followerId }).from(follows).where(eq(follows.artistId, owner[0].id));
+      if (followers.length) await db.insert(notifications).values(followers.map(follower => ({ userId: follower.userId, kind: "event" as const, title: "Novo show na sua cena", body: `${input.name} foi adicionado à agenda.`, href: `/eventos/${Number(result[0].insertId)}` })));
       return { persisted: true, id: Number(result[0].insertId) };
     }),
 
@@ -183,6 +193,8 @@ export const appRouter = router({
       const owner = await db.select({ id: artists.id }).from(artists).where(eq(artists.ownerId, ctx.user.id)).limit(1);
       if (!owner[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "Crie seu perfil de artista antes de enviar uma faixa." });
       const result = await db.insert(tracks).values({ ...input, artistId: owner[0].id, rightsDeclaredAt: new Date() });
+      const followers = await db.select({ userId: follows.followerId }).from(follows).where(eq(follows.artistId, owner[0].id));
+      if (followers.length) await db.insert(notifications).values(followers.map(follower => ({ userId: follower.userId, kind: "release" as const, title: "Tem som novo na sua cena", body: `${input.title} acabou de chegar.`, href: `/faixas/${Number(result[0].insertId)}` })));
       return { persisted: true, id: Number(result[0].insertId) };
     }),
   }),

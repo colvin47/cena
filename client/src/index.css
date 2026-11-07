@@ -202,3 +202,19 @@ a { color: inherit; text-decoration: none; }
 .recommendation-card p { margin: 0 0 8px; color: #aaa3b9; font-size: 13px; }
 .queue-count { border: 0; background: transparent; color: #aaa3b9; cursor: pointer; padding: 0 6px; }
 @media (max-width: 760px) { .recommendation-grid { grid-template-columns: 1fr; } }
+
+/* Acessibilidade: foco visível, navegação por teclado e alvos confortáveis no toque. */
+:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+.skip-link { position: fixed; z-index: 100; top: 10px; left: 10px; padding: 10px 14px; border-radius: 9px; background: var(--lime); color: var(--plum-950); font-weight: 800; transform: translateY(-150%); transition: transform .16s ease; }
+.skip-link:focus { transform: translateY(0); }
+.notification-panel { position: fixed; z-index: 40; top: 68px; right: 5vw; width: min(360px, calc(100vw - 28px)); padding: 14px; background: var(--plum-850); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+.notification-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.notification-item { display: flex; gap: 10px; padding: 11px 4px; border-top: 1px solid var(--line); }
+.notification-item.is-read { opacity: .65; }
+.notification-item strong, .notification-item small { display: block; }
+.notification-item strong { font-size: 12px; }
+.notification-item small { margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+.notification-kind { display: grid; flex: 0 0 auto; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: rgba(200,243,106,.15); color: var(--lime); }
+.notification-empty { margin: 12px 4px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.install-hint { width: 100%; margin-top: 8px; padding: 10px; border: 1px solid rgba(200,243,106,.22); border-radius: 9px; background: rgba(200,243,106,.08); color: var(--lime); font-size: 11px; font-weight: 800; }
+@media (max-width: 720px) { .notification-panel { top: 62px; right: 14px; } }

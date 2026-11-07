@@ -3,6 +3,8 @@
   "short_name": "CENA.",
   "description": "Descubra música, artistas e shows feitos perto de você.",
   "start_url": "/",
+  "scope": "/",
+  "id": "/",
   "display": "standalone",
   "background_color": "#17121f",
   "theme_color": "#c8f36a",
