@@ -338,3 +338,8 @@ Se essa ordem for respeitada, o Cena preserva sua diferenciação local e evita 
 A primeira camada de execução foi aplicada: o Cena agora possui páginas de detalhe para faixas, eventos e playlists compartilháveis; ação de adicionar faixas a playlists persistentes; estúdio do artista com edição de nome, handle, cidade, gênero, bio e links; métricas iniciais de reproduções, seguidores, interesses em eventos e faixas mais ouvidas; além de estados visíveis no upload para preparação, envio, validação e publicação.
 
 A próxima camada deve completar gestão de eventos, histórico de reprodução, lembretes/calendário e recomendações locais. Esses itens dependem de ampliar a experiência persistente sem misturar dados seed com dados reais.
+
+
+## 9. Segundo ciclo implementado
+
+A agenda agora permite ao usuário exportar um evento para o calendário do dispositivo em formato `.ics`. Artistas autenticados passam a visualizar seus próprios eventos e podem excluí-los com confirmação. A Biblioteca ganhou a seção “Continuar ouvindo”, alimentada pelo histórico persistente de reproduções do usuário. O backend também passou a expor atualização e exclusão de eventos, além de listar eventos do artista.

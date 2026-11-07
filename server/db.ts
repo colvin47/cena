@@ -190,6 +190,33 @@ export async function listEvents(city?: string) {
   }).from(events).innerJoin(artists, eq(events.artistId, artists.id)).leftJoin(eventInterests, eq(eventInterests.eventId, events.id)).where(and(...conditions)).groupBy(events.id, artists.name).orderBy(asc(events.eventDate)).limit(50);
 }
 
+export async function listArtistEvents(ownerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const artist = await getArtistByOwnerId(ownerId);
+  if (!artist) return [];
+  return db.select().from(events).where(eq(events.artistId, artist.id)).orderBy(asc(events.eventDate)).limit(50);
+}
+
+export async function updateArtistEvent(ownerId: number, eventId: number, input: { name: string; venue: string; city: string; eventDate: Date; description?: string; ticketUrl?: string }) {
+  const db = await getDb();
+  if (!db) return null;
+  const artist = await getArtistByOwnerId(ownerId);
+  if (!artist) return null;
+  await db.update(events).set({ ...input, description: input.description || null, ticketUrl: input.ticketUrl || null, updatedAt: new Date() }).where(and(eq(events.id, eventId), eq(events.artistId, artist.id)));
+  const result = await db.select().from(events).where(and(eq(events.id, eventId), eq(events.artistId, artist.id))).limit(1);
+  return result[0] ?? null;
+}
+
+export async function deleteArtistEvent(ownerId: number, eventId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const artist = await getArtistByOwnerId(ownerId);
+  if (!artist) return false;
+  const result = await db.delete(events).where(and(eq(events.id, eventId), eq(events.artistId, artist.id)));
+  return Number(result[0]?.affectedRows ?? 0) > 0;
+}
+
 export async function toggleFollow(userId: number, artistId: number) {
   const db = await getDb();
   if (!db) return false;
@@ -261,11 +288,12 @@ export async function addTrackToPlaylist(userId: number, playlistId: number, tra
 export async function getUserLibrary(userId: number) {
   const db = await getDb();
   if (!db) return null;
-  const [followRows, interestRows, playlistRows, savedRows] = await Promise.all([
+  const [followRows, interestRows, playlistRows, savedRows, recentRows] = await Promise.all([
     db.select({ artistId: follows.artistId }).from(follows).where(eq(follows.followerId, userId)),
     db.select({ eventId: eventInterests.eventId }).from(eventInterests).where(eq(eventInterests.userId, userId)),
     db.select({ id: playlists.id, name: playlists.name, collaborative: playlists.collaborative }).from(playlists).where(eq(playlists.ownerId, userId)).orderBy(desc(playlists.updatedAt)),
     db.select({ trackId: savedTracks.trackId }).from(savedTracks).where(eq(savedTracks.userId, userId)),
+    db.select({ trackId: trackPlays.trackId }).from(trackPlays).where(eq(trackPlays.userId, userId)).orderBy(desc(trackPlays.playedAt)).limit(20),
   ]);
   const playlistsWithTracks = await Promise.all(playlistRows.map(async playlist => {
     const rows = await db.select({ trackId: playlistTracks.trackId }).from(playlistTracks).where(eq(playlistTracks.playlistId, playlist.id)).orderBy(asc(playlistTracks.position));
@@ -275,6 +303,7 @@ export async function getUserLibrary(userId: number) {
     followedArtistIds: followRows.map(row => row.artistId),
     interestedEventIds: interestRows.map(row => row.eventId),
     savedTrackIds: savedRows.map(row => row.trackId),
+    recentTrackIds: Array.from(new Set(recentRows.map(row => row.trackId))),
     playlists: playlistsWithTracks,
   };
 }

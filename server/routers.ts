@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { artists, events, tracks } from "../drizzle/schema";
-import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listEvents, recordTrackPlay, setAccountType, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistProfile } from "./db";
+import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listArtistEvents, listEvents, recordTrackPlay, setAccountType, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistEvent, updateArtistProfile, deleteArtistEvent } from "./db";
 import { storagePresignPut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -80,6 +80,7 @@ export const appRouter = router({
 
     myArtistProfile: protectedProcedure.query(({ ctx }) => getArtistByOwnerId(ctx.user.id)),
     artistStats: protectedProcedure.query(({ ctx }) => getArtistStats(ctx.user.id)),
+    myEvents: protectedProcedure.query(({ ctx }) => listArtistEvents(ctx.user.id)),
     trackDetail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getTrackDetail(input.id)),
     eventDetail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getEventDetail(input.id)),
 
@@ -143,6 +144,18 @@ export const appRouter = router({
       return result;
     }),
 
+    updateEvent: protectedProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(1).max(180), venue: z.string().trim().min(1).max(180), city: z.string().trim().min(1).max(120), eventDate: z.string().datetime(), description: z.string().max(500).optional(), ticketUrl: z.string().url().optional() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem editar eventos." });
+      const event = await updateArtistEvent(ctx.user.id, input.id, { ...input, eventDate: new Date(input.eventDate) });
+      if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+      return { persisted: true, event };
+    }),
+    deleteEvent: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem excluir eventos." });
+      const deleted = await deleteArtistEvent(ctx.user.id, input.id);
+      if (!deleted) throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
+      return { deleted: true };
+    }),
     createEvent: protectedProcedure.input(z.object({ name: z.string().trim().min(1).max(180), venue: z.string().trim().min(1).max(180), city: z.string().trim().min(1).max(120), eventDate: z.string().datetime(), description: z.string().max(500).optional(), ticketUrl: z.string().url().optional() })).mutation(async ({ ctx, input }) => {
       if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem criar eventos." });
       const db = await getDb();
