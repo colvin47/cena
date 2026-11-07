@@ -343,3 +343,8 @@ A próxima camada deve completar gestão de eventos, histórico de reprodução,
 ## 9. Segundo ciclo implementado
 
 A agenda agora permite ao usuário exportar um evento para o calendário do dispositivo em formato `.ics`. Artistas autenticados passam a visualizar seus próprios eventos e podem excluí-los com confirmação. A Biblioteca ganhou a seção “Continuar ouvindo”, alimentada pelo histórico persistente de reproduções do usuário. O backend também passou a expor atualização e exclusão de eventos, além de listar eventos do artista.
+
+
+## 10. Terceiro ciclo implementado
+
+O painel de eventos do artista passou a permitir edição inline e exclusão com confirmação. O ouvinte pode adicionar eventos ao calendário, enquanto o player ganhou uma fila mínima: faixas podem ser adicionadas a uma fila persistente durante a navegação e o player exibe sua contagem. O histórico e as ações locais continuam compatíveis com o modo demonstração.
