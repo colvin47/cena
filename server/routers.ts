@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { artists, events, tracks } from "../drizzle/schema";
-import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getDb, getUserLibrary, listEvents, recordTrackPlay, setAccountType, toggleEventInterest, toggleFollow, toggleSavedTrack } from "./db";
+import { addTrackToPlaylist, createArtistProfile, createPlaylist, findArtists, findTracks, getArtistByOwnerId, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listEvents, recordTrackPlay, setAccountType, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistProfile } from "./db";
 import { storagePresignPut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -79,6 +79,9 @@ export const appRouter = router({
     library: protectedProcedure.query(({ ctx }) => getUserLibrary(ctx.user.id)),
 
     myArtistProfile: protectedProcedure.query(({ ctx }) => getArtistByOwnerId(ctx.user.id)),
+    artistStats: protectedProcedure.query(({ ctx }) => getArtistStats(ctx.user.id)),
+    trackDetail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getTrackDetail(input.id)),
+    eventDetail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getEventDetail(input.id)),
 
     createArtistProfile: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(160), handle: z.string().trim().min(2).max(80).regex(/^@?[a-zA-Z0-9_]+$/), city: z.string().trim().min(2).max(120), genre: z.string().trim().max(80).optional(), bio: z.string().trim().max(1000).optional() })).mutation(async ({ ctx, input }) => {
       if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Ative o perfil de artista antes de continuar." });
@@ -86,6 +89,19 @@ export const appRouter = router({
       try {
         const profile = await createArtistProfile(ctx.user.id, { ...input, handle });
         if (!profile) return { persisted: false, profile: null };
+        return { persisted: true, profile };
+      } catch (error) {
+        if (String(error).toLowerCase().includes("duplicate")) throw new TRPCError({ code: "CONFLICT", message: "Esse @ já está em uso. Escolha outro." });
+        throw error;
+      }
+    }),
+
+    updateArtistProfile: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(160), handle: z.string().trim().min(2).max(80).regex(/^@?[a-zA-Z0-9_]+$/), city: z.string().trim().min(2).max(120), genre: z.string().trim().max(80).optional(), bio: z.string().trim().max(1000).optional(), avatarUrl: z.string().url().max(2048).optional(), coverUrl: z.string().url().max(2048).optional(), instagramUrl: z.string().url().max(2048).optional(), bandcampUrl: z.string().url().max(2048).optional() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Ative o perfil de artista antes de editar." });
+      const handle = input.handle.startsWith("@") ? input.handle : `@${input.handle}`;
+      try {
+        const profile = await updateArtistProfile(ctx.user.id, { ...input, handle });
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Crie seu perfil de artista antes de editar." });
         return { persisted: true, profile };
       } catch (error) {
         if (String(error).toLowerCase().includes("duplicate")) throw new TRPCError({ code: "CONFLICT", message: "Esse @ já está em uso. Escolha outro." });

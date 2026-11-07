@@ -331,3 +331,10 @@ A ordem correta é:
 6. rede local de venues, produtores e shows.
 
 Se essa ordem for respeitada, o Cena preserva sua diferenciação local e evita tentar copiar Spotify ou Bandsintown antes de provar o ciclo mais valioso: **descobrir um som perto, seguir quem fez, ir ao show e voltar para a cena**.
+
+
+## 8. Ciclo implementado após a análise
+
+A primeira camada de execução foi aplicada: o Cena agora possui páginas de detalhe para faixas, eventos e playlists compartilháveis; ação de adicionar faixas a playlists persistentes; estúdio do artista com edição de nome, handle, cidade, gênero, bio e links; métricas iniciais de reproduções, seguidores, interesses em eventos e faixas mais ouvidas; além de estados visíveis no upload para preparação, envio, validação e publicação.
+
+A próxima camada deve completar gestão de eventos, histórico de reprodução, lembretes/calendário e recomendações locais. Esses itens dependem de ampliar a experiência persistente sem misturar dados seed com dados reais.

@@ -164,3 +164,24 @@ a { color: inherit; text-decoration: none; }
 .mobile-menu-panel button { min-height: 38px; padding: 0 11px; background: transparent; border-radius: 9px; color: var(--ink); font-size: 12px; font-weight: 700; text-align: left; }
 .mobile-menu-panel button:hover, .mobile-menu-panel button:focus-visible { background: rgba(200,243,106,.1); color: var(--lime); outline: none; }
 @media (min-width: 781px) { .mobile-menu-panel { display: none; } }
+
+/* Camada de produto: detalhes, estúdio e playlists */
+.detail-page { max-width: 980px; }
+.detail-hero { display: flex; gap: 28px; align-items: center; margin: 28px 0; }
+.detail-hero img { width: min(280px, 42vw); aspect-ratio: 1; object-fit: cover; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.28); }
+.detail-hero h1 { margin: 8px 0; }
+.detail-event-date { display: inline-flex; flex-direction: column; align-items: center; background: var(--lime, #c8f36a); color: #191326; padding: 14px 18px; border-radius: 14px; margin: 28px 0 12px; }
+.detail-event-date strong { font-size: 32px; line-height: 1; }
+.detail-event-date span { font-weight: 800; text-transform: uppercase; }
+.detail-meta, .detail-description { max-width: 680px; color: var(--muted, #a9a2bb); line-height: 1.7; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0 26px; }
+.stat-card { padding: 18px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(255,255,255,.04); }
+.stat-card strong { display: block; font-size: 30px; color: #c8f36a; }
+.stat-card span { color: #aaa3b9; font-size: 13px; }
+.playlist-picker { display: grid; gap: 8px; margin-top: 18px; }
+.playlist-picker-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: rgba(255,255,255,.04); color: inherit; text-align: left; cursor: pointer; }
+.playlist-picker-item span { flex: 1; }
+.playlist-picker-item small { color: #aaa3b9; }
+@media (max-width: 640px) { .detail-hero { flex-direction: column; align-items: flex-start; } .detail-hero img { width: 70vw; } .stats-grid { grid-template-columns: 1fr; } }
+.upload-status { display: grid; gap: 4px; padding: 14px; margin-bottom: 16px; border: 1px solid rgba(200,243,106,.35); border-radius: 12px; background: rgba(200,243,106,.08); color: #c8f36a; }
+.upload-status span { color: #b7b0c5; font-size: 13px; }

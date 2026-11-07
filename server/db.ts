@@ -99,6 +99,43 @@ export async function createArtistProfile(ownerId: number, input: { name: string
   return created[0] ?? null;
 }
 
+export async function updateArtistProfile(ownerId: number, input: { name: string; handle: string; city: string; genre?: string; bio?: string; avatarUrl?: string; coverUrl?: string; instagramUrl?: string; bandcampUrl?: string }) {
+  const db = await getDb();
+  if (!db) return null;
+  const existing = await getArtistByOwnerId(ownerId);
+  if (!existing) return null;
+  await db.update(artists).set({ ...input, genre: input.genre || null, bio: input.bio || null, avatarUrl: input.avatarUrl || null, coverUrl: input.coverUrl || null, instagramUrl: input.instagramUrl || null, bandcampUrl: input.bandcampUrl || null, updatedAt: new Date() }).where(eq(artists.ownerId, ownerId));
+  return getArtistByOwnerId(ownerId);
+}
+
+export async function getArtistStats(ownerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const artist = await getArtistByOwnerId(ownerId);
+  if (!artist) return null;
+  const [playRows, followerRows, eventRows, topTracks] = await Promise.all([
+    db.select({ total: count(trackPlays.id) }).from(trackPlays).innerJoin(tracks, eq(trackPlays.trackId, tracks.id)).where(eq(tracks.artistId, artist.id)),
+    db.select({ total: count(follows.artistId) }).from(follows).where(eq(follows.artistId, artist.id)),
+    db.select({ id: events.id, name: events.name, interest: count(eventInterests.eventId) }).from(events).leftJoin(eventInterests, eq(eventInterests.eventId, events.id)).where(eq(events.artistId, artist.id)).groupBy(events.id, events.name).orderBy(desc(events.eventDate)).limit(10),
+    db.select({ id: tracks.id, title: tracks.title, plays: count(trackPlays.id) }).from(tracks).leftJoin(trackPlays, eq(trackPlays.trackId, tracks.id)).where(eq(tracks.artistId, artist.id)).groupBy(tracks.id, tracks.title).orderBy(desc(count(trackPlays.id))).limit(5),
+  ]);
+  return { plays: Number(playRows[0]?.total ?? 0), followers: Number(followerRows[0]?.total ?? 0), events: eventRows.map(event => ({ ...event, interest: Number(event.interest ?? 0) })), topTracks: topTracks.map(track => ({ ...track, plays: Number(track.plays ?? 0) })) };
+}
+
+export async function getTrackDetail(trackId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select({ id: tracks.id, title: tracks.title, artistId: tracks.artistId, artist: artists.name, handle: artists.handle, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, description: tracks.description }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(eq(tracks.id, trackId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getEventDetail(eventId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select({ id: events.id, title: events.name, place: events.venue, city: events.city, eventDate: events.eventDate, description: events.description, ticketUrl: events.ticketUrl, artistId: events.artistId, artist: artists.name, handle: artists.handle }).from(events).innerJoin(artists, eq(events.artistId, artists.id)).where(eq(events.id, eventId)).limit(1);
+  return result[0] ?? null;
+}
+
 export async function findArtists(searchTerm?: string, city?: string) {
   const db = await getDb();
   if (!db) return [];
