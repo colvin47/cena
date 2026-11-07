@@ -380,3 +380,9 @@ A falha observada no Android foi corrigida substituindo a área inteira com inpu
 A pesquisa técnica confirmou que o Chrome concede acesso somente ao arquivo escolhido pelo usuário através do seletor nativo; não é correto solicitar uma permissão ampla de armazenamento para esse fluxo. Notificações são opcionais e agora possuem um botão explícito na tela de envio, com tratamento para navegador sem suporte e para permissão previamente bloqueada. O login Google continua sendo processado pelo Manus OAuth; a seleção Artista/Banda permanece separada da seleção Ouvinte e o backend continua bloqueando upload para contas sem papel de artista.
 
 Fontes consultadas: a documentação do Chrome explica que o seletor de arquivos precisa de gesto do usuário e contexto seguro; a referência MDN confirma o uso de `input type="file"`, `accept` e a validação adicional no servidor; o suporte oficial do Chrome descreve permissões específicas de site; e a documentação PWA esclarece que notificações e instalação são permissões/fluxos separados do acesso a arquivos.
+
+## 16. Correção do Failed to fetch e simplificação do perfil artista
+
+O envio foi alterado para uma rota same-origin (`/api/upload`). O navegador envia o áudio ou a capa ao próprio servidor CENA; o servidor autentica a sessão, confirma que a conta é artista, valida extensão, MIME e tamanho, solicita a URL temporária ao storage e grava o arquivo sem expor a URL S3 ao navegador. Essa mudança elimina a dependência de CORS do domínio temporário e evita que o erro de rede apareça como “Failed to fetch” no Android.
+
+O Estúdio do Artista agora exibe diretamente o botão “Enviar nova faixa”. A escolha Ouvinte ou Artista/Banda no modal de acesso passou a iniciar o fluxo com um único toque, em vez de exigir selecionar o cartão e depois clicar novamente em Continuar.

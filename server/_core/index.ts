@@ -7,6 +7,8 @@ import { publicPlatformScript } from "./publicConfig";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { storagePresignPut } from "../storage";
+import { sdk } from "./sdk";
 
 async function startServer() {
   const app = express();
@@ -19,6 +21,41 @@ async function startServer() {
     res.set("Cache-Control", "no-store").type("application/javascript").send(publicPlatformScript());
   });
   registerOAuthRoutes(app);
+  app.post("/api/upload", express.raw({ limit: "50mb", type: () => true }), async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      if (!user || (user.accountType !== "artist" && user.role !== "admin")) {
+        res.status(403).json({ error: "Apenas artistas podem enviar arquivos." });
+        return;
+      }
+
+      const kind = req.header("x-cena-kind");
+      const contentType = (req.header("content-type") || "").toLowerCase().split(";", 1)[0];
+      const encodedFileName = req.header("x-cena-file-name") || "upload.bin";
+      const fileName = decodeURIComponent(encodedFileName);
+      const body = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || "");
+      const maxSize = kind === "audio" ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+      const allowedExtensions = kind === "audio" ? ["mp3", "wav", "m4a", "ogg"] : ["jpg", "jpeg", "png", "webp"];
+      const allowedContentTypes = kind === "audio" ? ["audio/mpeg", "audio/wav", "audio/x-wav", "audio/mp4", "audio/ogg"] : ["image/jpeg", "image/png", "image/webp"];
+      const extension = fileName.includes(".") ? fileName.split(".").pop()?.toLowerCase() : "";
+      if ((kind !== "audio" && kind !== "image") || !extension || !allowedExtensions.includes(extension) || !allowedContentTypes.includes(contentType) || !body.length || body.length > maxSize) {
+        res.status(400).json({ error: "Arquivo inválido. Confira formato, tipo e tamanho." });
+        return;
+      }
+
+      const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-140);
+      const upload = await storagePresignPut(`cena/${user.id}/${kind}/${Date.now()}-${safeName}`, contentType);
+      const storageResponse = await fetch(upload.url, { method: "PUT", headers: { "Content-Type": contentType }, body });
+      if (!storageResponse.ok) {
+        res.status(502).json({ error: `Não foi possível gravar o arquivo no storage (${storageResponse.status}).` });
+        return;
+      }
+      res.json({ stableUrl: upload.stableUrl });
+    } catch (error) {
+      console.error("[Upload] Failed:", error instanceof Error ? error.message : "unknown error");
+      res.status(502).json({ error: "Não foi possível concluir o envio. Tente novamente." });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

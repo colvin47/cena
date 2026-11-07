@@ -250,3 +250,10 @@ img, video, audio, iframe { max-width: 100%; }
 .android-permission-card .ghost-button, .upload-lock .ghost-button { justify-self: start; }
 .cover-input { display: grid; gap: 8px; margin: 16px 0; color: var(--muted); font-size: 11px; font-weight: 700; }
 .cover-input .ghost-button { justify-content: flex-start; width: fit-content; }
+
+.studio-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.studio-actions .primary-button { min-height: 40px; }
+@media (max-width: 620px) {
+  .studio-actions { justify-content: flex-start; }
+  .studio-actions .data-mode { margin-left: 0; }
+}
