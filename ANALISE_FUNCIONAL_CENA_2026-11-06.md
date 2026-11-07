@@ -348,3 +348,8 @@ A agenda agora permite ao usuário exportar um evento para o calendário do disp
 ## 10. Terceiro ciclo implementado
 
 O painel de eventos do artista passou a permitir edição inline e exclusão com confirmação. O ouvinte pode adicionar eventos ao calendário, enquanto o player ganhou uma fila mínima: faixas podem ser adicionadas a uma fila persistente durante a navegação e o player exibe sua contagem. O histórico e as ações locais continuam compatíveis com o modo demonstração.
+
+
+## 11. Quarto ciclo implementado
+
+A Home passou a apresentar uma curadoria local explicável, com recomendações acompanhadas da razão “novo em [cidade]” e CTA direto para ouvir. O upload passou a tentar extrair automaticamente a duração do áudio antes de publicar. A fila ganhou painel visual para abrir, revisar e remover faixas, mantendo a contagem acessível no player.
