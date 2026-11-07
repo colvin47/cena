@@ -442,10 +442,16 @@ export default function Home() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.src = currentTrack.audioUrl ?? "";
+    if (!currentTrack.audioUrl) {
+      audio.removeAttribute("src");
+      audio.load();
+      setIsPlaying(false);
+      return;
+    }
+    audio.src = currentTrack.audioUrl;
     audio.load();
     if (isPlaying) audio.play().catch(() => setIsPlaying(false));
-  }, [currentTrack.id]);
+  }, [currentTrack.id, currentTrack.audioUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;

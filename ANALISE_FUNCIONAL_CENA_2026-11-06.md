@@ -390,3 +390,7 @@ O Estúdio do Artista agora exibe diretamente o botão “Enviar nova faixa”. 
 ## 17. Player fixo sem sobreposição
 
 O player foi redesenhado como uma barra compacta e fixa. No desktop, ele ocupa menos altura e o conteúdo reserva espaço inferior próprio. No Android/PWA, ele fica acima da navegação inferior, respeita `safe-area-inset-bottom`, usa capa e controles menores e reserva espaço suficiente no fluxo vertical para que cards, formulários e botões não fiquem escondidos atrás da barra.
+
+## 18. Correção da reprodução da faixa enviada
+
+Foi identificada uma colisão entre IDs: a primeira faixa do banco recebeu o mesmo ID numérico da primeira faixa de demonstração. O efeito do player dependia somente de `currentTrack.id`, então mantinha a URL do áudio demo mesmo depois de os dados reais chegarem. O efeito agora depende também de `audioUrl`, remove a fonte quando a faixa não possui áudio e recarrega explicitamente a URL estável da faixa real. A API confirmou que a faixa enviada retorna `audio/wav`, com entrega por range e URL estável válida.
