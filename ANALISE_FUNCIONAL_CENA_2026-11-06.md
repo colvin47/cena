@@ -372,3 +372,11 @@ A interface mobile foi ajustada para impedir rolagem horizontal: artistas e play
 O menu móvel agora inclui “Instalar CENA.”. Quando o navegador Android disponibiliza o prompt PWA, ele é acionado diretamente; caso contrário, a interface orienta o usuário a usar “Adicionar à tela inicial”.
 
 Após o login, o papel de ouvinte apresenta o formulário persistente “Perfil de público”, com cidade, gêneros favoritos e bio. O papel de artista continua em fluxo separado, com nome artístico, @, bio, uploads, eventos e Estúdio do Artista.
+
+## 15. Correção do upload no Android e permissões
+
+A falha observada no Android foi corrigida substituindo a área inteira com input de arquivo invisível por botões explícitos “Escolher áudio” e “Escolher imagem”. O botão dispara o seletor por um gesto direto do usuário e o input fica oculto sem cobrir a área clicável. O áudio aceita MP3, WAV, M4A e OGG; a validação de extensão, MIME e tamanho continua sendo feita no cliente e no servidor.
+
+A pesquisa técnica confirmou que o Chrome concede acesso somente ao arquivo escolhido pelo usuário através do seletor nativo; não é correto solicitar uma permissão ampla de armazenamento para esse fluxo. Notificações são opcionais e agora possuem um botão explícito na tela de envio, com tratamento para navegador sem suporte e para permissão previamente bloqueada. O login Google continua sendo processado pelo Manus OAuth; a seleção Artista/Banda permanece separada da seleção Ouvinte e o backend continua bloqueando upload para contas sem papel de artista.
+
+Fontes consultadas: a documentação do Chrome explica que o seletor de arquivos precisa de gesto do usuário e contexto seguro; a referência MDN confirma o uso de `input type="file"`, `accept` e a validação adicional no servidor; o suporte oficial do Chrome descreve permissões específicas de site; e a documentação PWA esclarece que notificações e instalação são permissões/fluxos separados do acesso a arquivos.

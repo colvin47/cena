@@ -239,3 +239,14 @@ img, video, audio, iframe { max-width: 100%; }
   .detail-hero img { width: min(70vw, 280px); }
   .page-intro h1, .hero-copy h1, .artist-profile-head h1 { overflow-wrap: anywhere; }
 }
+
+/* Seletores Android: o botão recebe o gesto do usuário e abre o picker nativo. */
+.upload-drop input[type="file"], .cover-input input[type="file"] { display: none; }
+.upload-drop { gap: 12px; }
+.upload-drop .primary-button, .cover-input .ghost-button { min-height: 44px; }
+.android-permission-card, .upload-lock { display: grid; gap: 8px; margin: 0 0 16px; padding: 15px; border: 1px solid rgba(200,243,106,.22); border-radius: 14px; background: rgba(200,243,106,.07); }
+.android-permission-card strong, .upload-lock strong { color: var(--ink); font-size: 13px; }
+.android-permission-card span, .android-permission-card small, .upload-lock span { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.android-permission-card .ghost-button, .upload-lock .ghost-button { justify-self: start; }
+.cover-input { display: grid; gap: 8px; margin: 16px 0; color: var(--muted); font-size: 11px; font-weight: 700; }
+.cover-input .ghost-button { justify-content: flex-start; width: fit-content; }
