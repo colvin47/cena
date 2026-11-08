@@ -1,4 +1,4 @@
-# CENA. — o som da sua cidade
+# Cena — música independente local
 
 React / Express / tRPC / Drizzle starter, adapted from the Sandbox web-db-user template.
 

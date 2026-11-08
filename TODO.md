@@ -1,62 +1,70 @@
 # TODO — Cena
+## Entregue no ciclo 1
+- [x] Shell responsivo escura, navegação desktop/mobile, player persistente e PWA.
+- [x] Login Manus OAuth com escolha de ouvinte ou artista/banda.
+- [x] Descoberta regional, busca, filtros de cidade/gênero e estados de catálogo vazio/indisponível.
+- [x] Player com play/pause, próxima, anterior, progresso e fila.
+- [x] Perfil de artista, upload com declaração de direitos e agenda de eventos.
+- [x] Playlists, follows, interesse em eventos, faixas salvas, notificações e métricas iniciais.
+- [x] Banco gerenciado, storage de áudio/imagem, autorização server-side e manifest PWA/rotas.
+## Ciclo 2 — Produto de cena underground
+### Catálogo e descoberta contextual
+- [x] O catálogo seed deve representar Campinas com punk, hardcore, rap, grime, post-hardcore, emo, beatmaker e DJ, além de demo, faixa ao vivo, split e compilação.
+- [x] A descoberta deve comunicar por que uma faixa apareceu, oferecer filtros de subgênero/formato e apresentar rotas de circulação, compilações e atividade de coletivos.
+- [x] A busca deve aceitar artista, banda, MC, produtor, beatmaker, selo, coletivo, faixa, gênero e cidade sem misturar cidades sem aviso.
+### Perfis, coletivos e apoio direto
+- [x] O perfil deve identificar se é banda, MC, produtor, DJ, coletivo ou selo e exibir manifesto, membros, créditos relacionados e agenda.
+- [x] O artista/coletivo deve poder informar links de Pix, merch, Bandcamp, vaquinha e redes; o perfil público deve oferecer esses apoios sem anúncios.
+- [ ] O modelo deve permitir associar membros e créditos de vocal, beat, produção, gravação, mixagem, masterização, arte, foto e vídeo.
+### Upload, direitos e player
+- [x] O upload deve aceitar e exibir formato single, demo, ao vivo, split ou compilação; a declaração de direitos continua obrigatória.
+- [x] A duração deve ser obtida do metadata do áudio no upload e ser a mesma no card, player, histórico e métricas.
+- [x] Ao trocar de cidade, o player deve explicar a permanência da fila anterior ou limpar a fila, sem sugerir mistura do catálogo regional.
+- [x] Falhas de upload devem ter retry seguro, limpeza best-effort, estado de processamento e publicação idempotente.
+### Agenda e circulação
+- [x] O artista deve criar eventos do tipo show, batalha, cypher, roda cultural, festival DIY, ocupação, feira de zines, workshop, listening party ou lançamento.
+- [x] O evento deve suportar entrada gratuita/contribuição, acessibilidade, espaço seguro, classificação e programação/participantes.
+- [ ] A agenda deve oferecer rotas de circulação, casas/espaços, selos e coletivos relacionados, além de interesse, calendário e compartilhamento.
+- [x] Exclusão deve ser substituída por cancelamento notificável aos interessados.
+### Comunidade e segurança
+- [x] Usuários devem poder denunciar faixa, perfil ou evento; o servidor deve registrar motivo, status e referência.
+- [ ] O sistema deve permitir bloquear conteúdo denunciado e comunicar retorno básico de moderação.
+- [ ] Playlists colaborativas devem exibir contribuição de cada usuário e compilações podem reunir faixas de vários artistas.
+- [x] O produto deve comunicar regras contra assédio, racismo, LGBTfobia e violência e oferecer espaços seguros.
+### Qualidade e validação
+- [ ] Completar testes de autorização, isolamento por cidade, upload, duração, biblioteca, playlists, eventos, denúncias e cancelamentos.
+- [x] Validar build, TypeScript, migração, health check, `manus-routes.json`, manifesto PWA e fluxo público depois do ciclo.
+- [ ] Login autenticado no Chrome/My Browser ainda precisa ser validado com a sessão do navegador conectada; o Preview Sandbox continua deslogado por padrão.
+## Pré-lançamento
+- [x] Rotas públicas de termos de uso, privacidade, regras da comunidade, direitos autorais e contato/suporte foram adicionadas ao app.
+- [x] O documento único `HANDOFF_CENA.md` registra checkpoint, arquitetura, comandos, validações, pendências e roteiro do primeiro piloto.
+- [ ] Substituir o texto de canal de contato do piloto pelo e-mail oficial e revisar os documentos com a pessoa responsável pelo projeto antes da abertura pública.
+- [x] Administradores podem criar notificações personalizadas com título, mensagem e link opcional; o aviso é persistido para todas as contas e aparece no centro de notificações.
+## Ciclo 3 — cobertura nacional
+- [x] Descoberta e formulários usam busca de municípios brasileiros via API oficial do IBGE, aceitando cidade com UF como `Porto Alegre, RS` e sem restringir o app a São Paulo.
+- [x] A cidade escolhida é reaproveitada no filtro regional, cadastro de ouvinte, perfil de artista, upload e criação de eventos; cidades sem catálogo mostram estado vazio sem misturar seed de Campinas.
 
-## 1. Shell responsivo e identidade da cena
+## Ciclo 4 — utilidade real, confiabilidade e acessibilidade
+- [x] A home deve diferenciar curadoria, catálogo ao vivo, demonstração e indisponibilidade; não deve afirmar personalização quando não houver sinais reais.
+- [x] Estados vazios de catálogo e agenda devem orientar a próxima ação, mostrar a cidade escolhida e permitir continuar explorando sem parecer uma falha silenciosa.
+- [x] A busca deve ser tolerante a acentos, preservar a cidade ativa, incluir faixas, artistas e eventos e oferecer uma saída clara quando não houver resultado.
+- [x] O player deve informar carregamento, ausência de áudio e erro de reprodução com recuperação manual; a posição e a fila continuam persistidas localmente.
+- [x] Imagens informativas devem ter texto alternativo; controles clicáveis devem ter foco visível, nomes acessíveis e alvos confortáveis no Android.
+- [x] A troca de cidade deve persistir no dispositivo e nunca misturar silenciosamente filas de cidades diferentes.
+- [x] O upload deve comunicar etapas, limites, leitura técnica, retry idempotente e limpeza best-effort sem perder a declaração de direitos.
+- [x] Validar TypeScript, testes, build, manifesto/rotas e publicação após as alterações.
 
-- [ ] O produto deve ser uma experiência web responsiva, em visual moderno e escuro, inspirada em apps de música, mas com identidade mais calorosa de cena local.
-- [ ] Em mobile, a navegação inferior deve conter Início, Buscar, Eventos, Biblioteca e Perfil.
-- [ ] Em desktop, a navegação deve se adaptar para um trilho lateral e preservar o player persistente.
-- [ ] Capas e fotos de artistas devem aparecer em destaque e os dados de exemplo devem ser fictícios de Campinas, SP.
+## Ciclo 5 — piloto funcional para artistas
+- [ ] O banco gerenciado deve conter `tracks.sourceType` e `tracks.externalUrl`, alinhados ao schema e ao fluxo de links externos, sem alterar dados existentes.
+- [ ] A descoberta pública deve responder HTTP 200 para Campinas e para cidades nacionais sem catálogo, e a interface deve separar indisponibilidade técnica de catálogo vazio.
+- [ ] O domínio oficial deve ser usado no canonical e nas prévias de compartilhamento.
+- [ ] O fluxo publicado deve permitir validar autenticação, criação/edição de perfil, upload ou link externo, publicação e aparição pública sem quebrar player, agenda, biblioteca ou notificações.
 
-## 2. Cadastro/login com papéis
 
-- [ ] Deve existir entrada de cadastro/login com escolha entre ouvinte e artista/banda.
-- [ ] O MVP deve usar login real do ambiente via Manus OAuth e manter estado logado/deslogado visível.
-- [ ] O artista/banda deve ter acesso a ações de upload e criação de evento; o ouvinte deve ter descoberta, follows, playlists e interesse em eventos.
-
-## 3. Descoberta regional e busca
-
-- [ ] A tela inicial deve apresentar “Em alta na sua cidade”, com cidade visível e filtros por gênero/região.
-- [ ] O usuário deve conseguir buscar por artista, faixa, gênero e cidade.
-- [ ] O seed deve conter artistas, faixas e eventos fictícios de Campinas, SP para demonstração.
-
-## 4. Player persistente
-
-- [ ] Deve existir player persistente com play/pause, faixa atual, próxima faixa, barra de progresso e fila.
-- [ ] Tocar faixas a partir da descoberta, do perfil e da busca deve atualizar o player sem trocar de tela.
-
-## 5. Fluxo de upload do artista
-
-- [ ] O artista deve conseguir iniciar upload de faixa/álbum informando título, capa, gênero, cidade e descrição.
-- [ ] O upload deve exibir e exigir a declaração de que o próprio artista possui os direitos sobre o conteúdo, incluindo termos de uso.
-- [ ] Áudio e imagens devem usar armazenamento durável; o banco deve guardar os metadados e os endereços estáveis.
-- [ ] O MVP não deve exibir anúncios.
-
-## 6. Perfil de artista/banda
-
-- [ ] O perfil deve exibir bio, foto/identidade visual, faixas, redes sociais e próximos shows.
-- [ ] Deve ser possível seguir o artista e compartilhar o link do perfil.
-
-## 7. Agenda de shows e eventos
-
-- [ ] O artista deve conseguir criar evento com nome, local, data, descrição e link de ingresso opcional.
-- [ ] O ouvinte deve filtrar eventos por cidade/data e marcar “Tenho interesse”.
-- [ ] Eventos e perfis/faixas devem oferecer compartilhamento por link.
-
-## 8. Playlists e comunidade
-
-- [ ] O ouvinte deve conseguir visualizar playlists seed, criar uma playlist local e indicar se ela é colaborativa.
-- [ ] A interface deve comunicar que outros usuários podem adicionar faixas em playlists colaborativas.
-- [ ] O usuário deve receber atualizações de novos lançamentos e shows dos artistas seguidos em uma área de biblioteca/atividade.
-
-## 9. Base de dados e storage
-
-- [ ] Modelar e migrar tabelas de usuários, artistas, faixas, eventos, playlists, relações de playlist, follows, interesse em eventos e reproduções no banco gerenciado.
-- [ ] Adicionar integridade referencial, unicidade, índices de cidade/gênero/data/artista, `position` em playlists, `updatedAt` e auditoria mínima de direitos.
-- [ ] Manter uma camada de seed demonstrativa no frontend enquanto a integração persistente é expandida.
-
-## 10. Qualidade e entrega
-
-- [ ] Servir `manus-routes.json` com todas as rotas de páginas do produto.
-- [ ] Manter diagnósticos TypeScript registrados e corrigir erros acionáveis.
-- [ ] Validar o build de frontend e backend e iniciar o servidor no runtime configurado.
-- [ ] Fazer checkpoint apenas depois de validar as alterações no projeto.
+## Ciclo 6 — perfil central e publicação visível
+- [x] A página `/perfil` deve apresentar uma visão geral permanente, com nome, cidade, tipo de conta, status, edição e compartilhamento.
+- [x] O perfil de artista/banda deve exibir métricas, bio, atividade, faixas publicadas, próximos eventos e botão destacado para enviar nova faixa.
+- [x] O perfil de ouvinte deve exibir cidade, bio, gêneros, artistas seguidos, faixas salvas, playlists, eventos de interesse e edição do perfil.
+- [x] O catálogo próprio do artista deve ser consultado sem depender da cidade ou gênero selecionados na Home.
+- [x] Depois do upload, o fluxo deve atualizar o catálogo próprio e levar o artista ao perfil, onde a faixa publicada pode ser tocada diretamente.
+- [ ] Publicar esta versão no projeto Webdev correspondente ao domínio `cena-s494x52h.manus.space`; a cópia atual ainda está separada do projeto Webdev inicialmente conectado.

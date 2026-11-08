@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "3e1f3958-8c4f-4ab8-96fd-b65df665a972",
-  "prevId": "ea78ccf8-392f-4887-aa13-95402b6cbcc7",
+  "id": "2ff3571f-defc-4321-98a0-5ff69453bb3c",
+  "prevId": "bcf46319-0d55-4fc1-8698-e95e5225c56d",
   "tables": {
     "artists": {
       "name": "artists",
@@ -35,8 +35,23 @@
           "notNull": true,
           "autoincrement": false
         },
+        "profileType": {
+          "name": "profileType",
+          "type": "enum('solo','band','mc','producer','dj','collective','label','venue')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'solo'"
+        },
         "bio": {
           "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "manifesto": {
+          "name": "manifesto",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -84,6 +99,35 @@
           "notNull": false,
           "autoincrement": false
         },
+        "supportUrl": {
+          "name": "supportUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pixUrl": {
+          "name": "pixUrl",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "merchUrl": {
+          "name": "merchUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "isVerified": {
+          "name": "isVerified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
         "createdAt": {
           "name": "createdAt",
           "type": "timestamp",
@@ -107,6 +151,13 @@
           "name": "idx_artists_city",
           "columns": [
             "city"
+          ],
+          "isUnique": false
+        },
+        "idx_artists_profile_type": {
+          "name": "idx_artists_profile_type",
+          "columns": [
+            "profileType"
           ],
           "isUnique": false
         }
@@ -143,6 +194,236 @@
         },
         "artists_handle_unique": {
           "name": "artists_handle_unique",
+          "columns": [
+            "handle"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "collectiveMembers": {
+      "name": "collectiveMembers",
+      "columns": {
+        "collectiveId": {
+          "name": "collectiveId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "artistId": {
+          "name": "artistId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "memberRole": {
+          "name": "memberRole",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "idx_collective_members_artist": {
+          "name": "idx_collective_members_artist",
+          "columns": [
+            "artistId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "collectiveMembers_collectiveId_collectives_id_fk": {
+          "name": "collectiveMembers_collectiveId_collectives_id_fk",
+          "tableFrom": "collectiveMembers",
+          "tableTo": "collectives",
+          "columnsFrom": [
+            "collectiveId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "collectiveMembers_artistId_artists_id_fk": {
+          "name": "collectiveMembers_artistId_artists_id_fk",
+          "tableFrom": "collectiveMembers",
+          "tableTo": "artists",
+          "columnsFrom": [
+            "artistId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "collectiveMembers_collectiveId_artistId_pk": {
+          "name": "collectiveMembers_collectiveId_artistId_pk",
+          "columns": [
+            "collectiveId",
+            "artistId"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "collectives": {
+      "name": "collectives",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "ownerId": {
+          "name": "ownerId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "handle": {
+          "name": "handle",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "enum('collective','label','venue','media','festival')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'collective'"
+        },
+        "city": {
+          "name": "city",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "manifesto": {
+          "name": "manifesto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "imageUrl": {
+          "name": "imageUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "supportUrl": {
+          "name": "supportUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pixUrl": {
+          "name": "pixUrl",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "idx_collectives_city": {
+          "name": "idx_collectives_city",
+          "columns": [
+            "city"
+          ],
+          "isUnique": false
+        },
+        "idx_collectives_owner": {
+          "name": "idx_collectives_owner",
+          "columns": [
+            "ownerId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "collectives_ownerId_users_id_fk": {
+          "name": "collectives_ownerId_users_id_fk",
+          "tableFrom": "collectives",
+          "tableTo": "users",
+          "columnsFrom": [
+            "ownerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "collectives_id": {
+          "name": "collectives_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "collectives_handle_unique": {
+          "name": "collectives_handle_unique",
           "columns": [
             "handle"
           ]
@@ -263,6 +544,22 @@
           "notNull": true,
           "autoincrement": false
         },
+        "eventType": {
+          "name": "eventType",
+          "type": "enum('show','battle','cypher','cultural_round','diy_festival','occupation','zine_fair','workshop','listening_party','release')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'show'"
+        },
+        "admissionType": {
+          "name": "admissionType",
+          "type": "enum('ticket','free','contribution')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'ticket'"
+        },
         "eventDate": {
           "name": "eventDate",
           "type": "timestamp",
@@ -277,8 +574,51 @@
           "notNull": false,
           "autoincrement": false
         },
+        "program": {
+          "name": "program",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "accessibility": {
+          "name": "accessibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "safeSpace": {
+          "name": "safeSpace",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "ageRating": {
+          "name": "ageRating",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "ticketUrl": {
           "name": "ticketUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "canceledAt": {
+          "name": "canceledAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cancelReason": {
+          "name": "cancelReason",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -308,6 +648,13 @@
           "columns": [
             "city",
             "eventDate"
+          ],
+          "isUnique": false
+        },
+        "idx_events_type": {
+          "name": "idx_events_type",
+          "columns": [
+            "eventType"
           ],
           "isUnique": false
         },
@@ -414,6 +761,118 @@
           "columns": [
             "followerId",
             "artistId"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "moderationReports": {
+      "name": "moderationReports",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "reporterId": {
+          "name": "reporterId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "targetType": {
+          "name": "targetType",
+          "type": "enum('track','artist','event','collective')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "targetId": {
+          "name": "targetId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "details": {
+          "name": "details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('open','reviewed','resolved','rejected')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'open'"
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "resolvedAt": {
+          "name": "resolvedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_reports_target": {
+          "name": "idx_reports_target",
+          "columns": [
+            "targetType",
+            "targetId"
+          ],
+          "isUnique": false
+        },
+        "idx_reports_status": {
+          "name": "idx_reports_status",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "moderationReports_reporterId_users_id_fk": {
+          "name": "moderationReports_reporterId_users_id_fk",
+          "tableFrom": "moderationReports",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reporterId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "moderationReports_id": {
+          "name": "moderationReports_id",
+          "columns": [
+            "id"
           ]
         }
       },
@@ -781,6 +1240,96 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
+    "trackCredits": {
+      "name": "trackCredits",
+      "columns": {
+        "trackId": {
+          "name": "trackId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creditName": {
+          "name": "creditName",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creditRole": {
+          "name": "creditRole",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "artistId": {
+          "name": "artistId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "idx_track_credits_artist": {
+          "name": "idx_track_credits_artist",
+          "columns": [
+            "artistId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "trackCredits_trackId_tracks_id_fk": {
+          "name": "trackCredits_trackId_tracks_id_fk",
+          "tableFrom": "trackCredits",
+          "tableTo": "tracks",
+          "columnsFrom": [
+            "trackId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "trackCredits_artistId_artists_id_fk": {
+          "name": "trackCredits_artistId_artists_id_fk",
+          "tableFrom": "trackCredits",
+          "tableTo": "artists",
+          "columnsFrom": [
+            "artistId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "trackCredits_trackId_creditName_creditRole_pk": {
+          "name": "trackCredits_trackId_creditName_creditRole_pk",
+          "columns": [
+            "trackId",
+            "creditName",
+            "creditRole"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
     "trackPlays": {
       "name": "trackPlays",
       "columns": {
@@ -923,6 +1472,21 @@
           "notNull": false,
           "autoincrement": false
         },
+        "releaseType": {
+          "name": "releaseType",
+          "type": "enum('single','album','demo','live','split','compilation')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'single'"
+        },
+        "creditsNote": {
+          "name": "creditsNote",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "coverUrl": {
           "name": "coverUrl",
           "type": "text",
@@ -1012,6 +1576,13 @@
           "columns": [
             "city",
             "genre"
+          ],
+          "isUnique": false
+        },
+        "idx_tracks_release_type": {
+          "name": "idx_tracks_release_type",
+          "columns": [
+            "releaseType"
           ],
           "isUnique": false
         },

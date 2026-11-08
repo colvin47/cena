@@ -6,10 +6,11 @@
   "scope": "/",
   "id": "/",
   "display": "standalone",
-  "background_color": "#17121f",
-  "theme_color": "#c8f36a",
+  "background_color": "#050507",
+  "theme_color": "#050507",
   "lang": "pt-BR",
   "icons": [
+    { "src": "/cena-logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/cena-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

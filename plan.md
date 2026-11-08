@@ -1,52 +1,58 @@
 # Plano — Cena
 
 ## Escopo de implementação
-
-O Cena será uma experiência web responsiva com linguagem de PWA, construída no starter React/Express/tRPC/Drizzle com servidor e banco gerenciados. A primeira entrega implementa o fluxo principal de descoberta regional, autenticação via Manus OAuth, player persistente, perfil de artista/banda, upload de faixa com declaração de direitos, agenda de eventos, playlists e biblioteca/atividade. A aplicação mantém seed demonstrativo de Campinas, SP enquanto a persistência é expandida.
+O MVP será uma experiência web responsiva com linguagem de PWA, construída sobre o starter React/Express/tRPC/Drizzle já inicializado com servidor e banco gerenciados. A primeira entrega prioriza o fluxo principal: descoberta regional, autenticação via Manus OAuth, player persistente, perfil de artista/banda, upload de faixa com declaração de direitos e agenda de eventos. As interações de demonstração terão estado local para manter o protótipo navegável mesmo antes da persistência completa; o schema Drizzle e os procedimentos tRPC deixam a base pronta para conectar usuários, artistas, faixas, eventos, playlists e follows ao banco compartilhado.
 
 ## Direção visual
+Três caminhos considerados: **A. Pós-punk caloroso de bairro** (0,07): preto azulado, coral queimado, adesivos e recortes de cartaz. **B. Rádio comunitária editorial** (0,06): marfim, vinho e tipografia de jornal, com foco em agenda. **C. Noite neon da cena local** (0,08): fundo ameixa, lima elétrica, lavanda e cartões de capa como fitas de palco. Escolha: **C**, por equilibrar energia de streaming com calor de cena independente.
 
-**Movimento:** neo-brutalismo suave com referências de flyers de show, capas de fita e interfaces de rádio pirata.
-
-**Princípios:** a cidade aparece em primeiro lugar; capas e rostos têm protagonismo; ações principais são imediatas; densidade editorial sem parecer dashboard.
-
-**Filosofia de cor:** ameixa quase preta para criar uma noite acolhedora; lima como assinatura de descoberta e “ao vivo”; coral para presença humana e urgência de show; lavanda para navegação e estados selecionados. Cor proprietária: `#c8f36a`.
-
-**Layout:** trilho lateral no desktop, navegação inferior no mobile e seções horizontais que lembram uma banca de discos. O conteúdo alterna blocos largos e listas compactas, evitando uma grade centralizada genérica.
-
-**Elementos assinatura:** wordmark `CENA.` com ponto lima fluorescente; chips de cidade com ícone de sinal; cartões de evento com data em bloco de cor; equalizador irregular como marca auxiliar.
-
-**Interação e animação:** tocar música é instantâneo e não troca de tela; seguir, interessar-se e salvar têm resposta visual curta; filtros preservam o contexto regional; entradas usam fade/slide de 160–220ms; capas ganham escala 1,03 e brilho em hover; o player pulsa discretamente quando toca.
-
-**Tipografia:** Geist/Inter para interface e títulos utilitários, com serif editorial opcional para chamadas de agenda. Títulos grandes, labels em caixa alta e metadados compactos.
-
-**Essência e voz:** “o som da sua cidade, feito por quem vive nela”; personalidade próxima, elétrica e generosa. A voz é direta, local e convidativa, com chamadas como “A cidade tem som novo.” e “Chegue antes do refrão.”
+- **Movimento:** neo-brutalismo suave com referências de flyers de show, capas de fita e interfaces de rádio pirata.
+- **Princípios:** a cidade aparece em primeiro lugar; capas e rostos têm protagonismo; ações principais são imediatas; densidade editorial sem parecer dashboard.
+- **Filosofia de cor:** ameixa quase preta para criar uma noite acolhedora; lima como assinatura de descoberta e “ao vivo”; coral para presença humana e urgência de show; lavanda para navegação e estados selecionados.
+- **Paradigma de layout:** trilho lateral no desktop, navegação inferior no mobile e seções horizontais que lembram uma banca de discos; o conteúdo principal alterna blocos largos e listas compactas, evitando uma grade centralizada genérica.
+- **Elementos assinatura:** palavra-marca “CENA.” com ponto fluorescente; chips de cidade com ícone de sinal; cartões de evento com data destacada em bloco de cor.
+- **Interação:** tocar uma música deve ser instantâneo e nunca tirar o usuário da tela; seguir, interessar-se e salvar têm resposta visual curta; filtros preservam contexto regional.
+- **Animação:** entrada por fade/slide de 160–220ms; capas em hover ganham escala 1,03 e brilho; player usa pulsação discreta quando tocando; nada deve competir com a leitura.
+- **Tipografia:** Geist/Inter para interface e títulos utilitários; serif editorial opcional para chamadas de agenda. Hierarquia com títulos grandes, labels em caixa alta e metadados compactos.
+- **Essência:** “o som da sua cidade, feito por quem vive nela”; personalidade: próxima, elétrica, generosa.
+- **Voz:** direta, local e convidativa. Exemplos: “A cidade tem som novo.” e “Chegue antes do refrão.”
+- **Wordmark:** CENA. em caixa alta com ponto lima como sinal de atividade; ícone auxiliar formado por três barras de equalizador irregulares.
+- **Cor proprietária:** Lima Cena `#c8f36a`.
 
 ## Arquitetura
+- `client/src/App.tsx`: shell responsivo, navegação, estado de telas, modal de login e player persistente.
+- `client/src/pages/Home.tsx`: experiência principal e componentes de descoberta, perfil, busca, eventos, biblioteca e upload em um fluxo navegável de MVP.
+- `client/src/index.css`: tokens de cor, tipografia, layout desktop/mobile, player e componentes editoriais.
+- `client/public/`: manifesto PWA, service worker, manifest de rotas e assets demonstrativos.
+- `drizzle/schema.ts`, `server/db.ts`, `server/routers.ts`: tabelas e contratos iniciais para artistas, faixas, eventos, playlists e follows, com procedimentos públicos/protegidos básicos.
 
-- `client/src/App.tsx`: shell responsivo, rotas, providers e player persistente.
-- `client/src/pages/Home.tsx`: navegação principal, descoberta, busca, eventos, biblioteca, perfil e upload em fluxo navegável.
-- `client/src/index.css`: tokens visuais, layout desktop/mobile, cards, player e estados.
-- `client/public/`: manifesto PWA, manifest de rotas e assets demonstrativos pequenos.
-- `drizzle/schema.ts`: usuários, artistas, faixas, eventos, playlists, relações, follows, interesses e reproduções.
-- `server/db.ts`: consultas e mutações persistentes com fallback seguro quando o banco não estiver disponível.
-- `server/routers.ts`: procedimentos públicos e protegidos para descoberta, conta, follows, eventos, playlists, upload e atividade.
-- `server/storage.ts`: fluxo de presigned upload para áudio e imagens, sempre protegido no servidor.
+## Construção e publicação
+1. Configurar assets, manifesto PWA e metadata de projeto.
+2. Implementar a shell e o fluxo visual principal com dados seed fictícios de Campinas, SP.
+3. Adicionar schema Drizzle e endpoints tRPC para leitura do usuário e mutações de demonstração.
+4. Iniciar o servidor na porta gerenciada, validar `manus-routes.json`, checar TypeScript e build.
+5. Fazer checkpoint no repositório principal após validação.
 
-## Estratégia de entrega
+## Ciclo 2 — Cena underground brasileira
+O segundo ciclo transforma o MVP de streaming regional em infraestrutura de cena para punk, hardcore, hip hop e derivados alternativos. A implementação será incremental e compatível com o banco atual: preservar entidades existentes, adicionar campos e tabelas para perfis de coletivo, créditos, apoio direto, tipos/contexto de evento e denúncias; atualizar discovery/seed para representar a cena; e tornar upload, player e ações comunitárias coerentes.
 
-1. Criar a base visual navegável e os dados seed de Campinas.
-2. Implementar o player persistente e as ações locais de follow, interesse e playlist.
-3. Substituir progressivamente dados locais por consultas tRPC e migrations Drizzle.
-4. Integrar Manus OAuth mantendo o estado real de login e distinguindo `accountType` de `role`.
-5. Integrar storage durável para áudio, capas e avatares, persistindo metadados no banco.
-6. Validar `manus-routes.json`, TypeScript, build e a experiência em desktop/mobile.
+### Entregas de produto
+- Corrigir fonte de verdade da duração: metadata lida no upload e player/card sincronizados; ao trocar de cidade, explicar ou limpar a fila anterior sem misturar contexto.
+- Substituir o seed genérico por catálogo fictício de Campinas com punk, hardcore, rap, grime, post-hardcore, emo, beatmaker, DJ, selo, batalha de rima, cypher, show DIY e feira de zines.
+- Expandir perfis para banda, MC, produtor, coletivo e selo, com manifesto, membros e links de apoio (Pix, merch, Bandcamp, vaquinha).
+- Registrar créditos de faixa e formatos demo, ao vivo, split e compilação.
+- Expandir eventos com tipo cultural, gratuidade/contribuição, acessibilidade, espaço seguro e descrição de programação.
+- Adicionar descoberta contextual, rotas de circulação, compilação coletiva e atividade de cena.
+- Adicionar denúncia básica de conteúdo/perfil/evento, bloqueio de publicação e feedback de moderação.
+- Manter regras de direitos autorais, isolamento por cidade e autorização no servidor.
 
-## Decisões de MVP
+### Estrutura
+- `shared/scene-seed.ts`: catálogo underground demonstrativo e tipos de cena.
+- `drizzle/schema.ts`: colunas de perfil/apoio, créditos, contexto de eventos e denúncias.
+- `server/db.ts` e `server/routers.ts`: persistência, autorização, discovery contextual e moderação.
+- `client/src/pages/Home.tsx`: cards, formulários, estúdio, perfil público e player coerentes com o novo domínio.
+- `client/src/index.css`: badges, créditos, apoio, contexto de evento e estados de moderação.
 
-- `tracks.album` continua texto; uma tabela de álbuns fica para uma evolução posterior.
-- O ranking “Em alta” começa com seed/curadoria e pode usar `trackPlays` quando houver dados reais.
-- `tracks.city` representa a cidade de gravação/publicação da faixa, não necessariamente a cidade do artista.
-- Horários de eventos são armazenados em UTC e convertidos para a exibição local.
-- Playlists colaborativas terão indicação visual clara; a autorização persistente será aplicada pelo servidor quando a playlist estiver conectada ao banco.
-- Não haverá anúncios no MVP.
+
+## Ciclo 3 — cobertura nacional
+A localização deixa de ser uma lista fixa de cidades paulistas. O cliente consulta a lista oficial de municípios do IBGE, exibe município com UF e reutiliza o mesmo campo em descoberta, cadastro de ouvinte, perfil de artista, upload e agenda. O backend preserva a cidade como texto normalizado para manter compatibilidade com o banco existente; cidades sem dados persistidos exibem vazio regional, sem fallback indevido para Campinas. O caso de validação prioritário é Porto Alegre, RS.

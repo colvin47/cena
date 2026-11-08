@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { storagePresignPut } from "../storage";
 import { sdk } from "./sdk";
+import { HttpError } from "@shared/_core/errors";
 
 async function startServer() {
   const app = express();
@@ -24,7 +25,11 @@ async function startServer() {
   app.post("/api/upload", express.raw({ limit: "50mb", type: () => true }), async (req, res) => {
     try {
       const user = await sdk.authenticateRequest(req);
-      if (!user || (user.accountType !== "artist" && user.role !== "admin")) {
+      if (!user) {
+        res.status(401).json({ error: "Sua sessão expirou. Entre novamente antes de enviar o arquivo." });
+        return;
+      }
+      if (user.accountType !== "artist" && user.role !== "admin") {
         res.status(403).json({ error: "Apenas artistas podem enviar arquivos." });
         return;
       }
@@ -44,7 +49,9 @@ async function startServer() {
       }
 
       const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-140);
-      const upload = await storagePresignPut(`cena/${user.id}/${kind}/${Date.now()}-${safeName}`, contentType);
+      const requestedKey = req.header("x-cena-upload-key") || `${Date.now()}-${safeName}`;
+      const safeUploadKey = requestedKey.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 120) || `${Date.now()}`;
+      const upload = await storagePresignPut(`cena/${user.id}/${kind}/${safeUploadKey}-${safeName}`, contentType, { unique: false });
       const storageResponse = await fetch(upload.url, { method: "PUT", headers: { "Content-Type": contentType }, body });
       if (!storageResponse.ok) {
         res.status(502).json({ error: `Não foi possível gravar o arquivo no storage (${storageResponse.status}).` });
@@ -52,6 +59,10 @@ async function startServer() {
       }
       res.json({ stableUrl: upload.stableUrl });
     } catch (error) {
+      if (error instanceof HttpError && error.statusCode === 403) {
+        res.status(401).json({ error: "Sua sessão expirou. Entre novamente antes de enviar o arquivo." });
+        return;
+      }
       console.error("[Upload] Failed:", error instanceof Error ? error.message : "unknown error");
       res.status(502).json({ error: "Não foi possível concluir o envio. Tente novamente." });
     }

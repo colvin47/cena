@@ -1,0 +1,40 @@
+CONTINUE O PROJETO CENA A PARTIR DO CHECKPOINT 4984316.
+
+Não reinicialize o projeto e não substitua arquivos existentes sem inspeção. Leia primeiro HANDOFF_CENA.md, plan.md e TODO.md. Depois inspecione:
+- client/src/pages/Home.tsx
+- client/src/App.tsx
+- client/src/index.css
+- server/routers.ts
+- server/db.ts
+- drizzle/schema.ts
+- shared/types.ts
+- shared/scene-seed.ts
+
+O CENA é um PWA responsivo de streaming musical e agenda cultural local para a cena underground brasileira: punk, hardcore, hip hop, rap, grime e derivados alternativos. O foco é coletividade, circulação regional, créditos completos, apoio direto e agenda local. Não incluir anúncios.
+
+Estado já entregue: Manus OAuth, perfis de ouvinte/artista, perfis de bandas/MCs/produtores/DJs/coletivos/selos, player dock inferior, upload real de áudio e capa, declaração obrigatória de direitos, créditos, eventos, playlists, follows, faixas salvas, notificações, páginas legais, PWA e catálogo nacional de 5.570 municípios com Porto Alegre/RS.
+
+A funcionalidade recém-concluída é o fluxo de sugestão editorial por IA no upload. Preserve a mutation protegida scene.suggestTrackMetadata em server/routers.ts e a integração existente em Home.tsx. A IA sugere descrição, gênero, álbum, créditos, tags e bio com revisão manual; não confirma autoria nem direitos. Atualmente é sugestão contextual baseada nos dados do formulário e perfil, não análise acústica do áudio.
+
+Antes de editar, execute na raiz:
+  pnpm install --frozen-lockfile
+  pnpm check
+  pnpm test
+  pnpm build
+
+Prioridades seguintes:
+1. Validar login real no domínio publicado.
+2. Fazer upload ponta a ponta autenticado com uma banda de Porto Alegre/RS.
+3. Criar um evento em Porto Alegre/RS e testar links em aba anônima.
+4. Trocar o contato provisório das páginas legais pelo e-mail oficial.
+5. Completar moderação administrativa e bloqueio de conteúdo.
+6. Adicionar retry/idempotência ao upload.
+7. Estruturar membros e créditos de coletivos como relações editáveis.
+8. Testar com 3–5 projetos independentes do RS.
+
+URL pública conhecida:
+https://cena-s494x52htpWYrT5Qi68YCS.manus.space
+
+Não tratar Preview como URL definitiva. O projeto Webdev é CENA — música independente local, com servidor e MySQL gerenciados. Se a conta não enxergar o projeto, usar o ZIP/arquivo de handoff ou pedir acesso pelo Dashboard oficial; não compartilhar credenciais.
+
+Nunca expor ou solicitar .env, chaves API, cookies, tokens, URLs privadas de storage ou credenciais de banco. Não usar force push. Preservar alterações concorrentes, validar com check/test/build e fazer commits pequenos em main.

@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Legal from "./pages/Legal";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -20,6 +21,11 @@ function Router() {
       <Route path="/eventos/:id" component={Home} />
       <Route path="/playlists/:id" component={Home} />
       <Route path="/enviar" component={Home} />
+      <Route path="/termos" component={Legal} />
+      <Route path="/privacidade" component={Legal} />
+      <Route path="/comunidade" component={Legal} />
+      <Route path="/direitos" component={Legal} />
+      <Route path="/contato" component={Legal} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -37,7 +43,6 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider
         defaultTheme="dark"
-        // switchable
       >
         <TooltipProvider>
           <Toaster />

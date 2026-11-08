@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `accountType` enum('listener','artist') DEFAULT 'listener' NOT NULL;

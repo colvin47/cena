@@ -1,4 +1,5 @@
-import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
+import { randomUUID } from "node:crypto";
+import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState, encodeOAuthState } from "@shared/const";
 import { parse as parseCookieHeader } from "cookie";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
@@ -11,6 +12,26 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
+  app.get("/api/oauth/start", (req: Request, res: Response) => {
+    const redirectUri = getQueryParam(req, "redirectUri");
+    const portalUrl = process.env.MANUS_OAUTH_PORTAL_URL;
+    const appId = process.env.MANUS_PROJECT_ID;
+    if (!redirectUri || !/^https:\/\/[^/]+\/api\/oauth\/callback$/.test(redirectUri) || !portalUrl || !appId) {
+      res.status(400).json({ error: "OAuth is not configured for this origin" });
+      return;
+    }
+
+    const nonce = randomUUID();
+    res.cookie(OAUTH_STATE_COOKIE, nonce, { httpOnly: true, path: "/", maxAge: 10 * 60 * 1000, sameSite: "lax", secure: true });
+    const state = encodeOAuthState({ redirectUri, nonce });
+    const loginUrl = new URL(`${portalUrl}/app-auth`);
+    loginUrl.searchParams.set("appId", appId);
+    loginUrl.searchParams.set("redirectUri", redirectUri);
+    loginUrl.searchParams.set("state", state);
+    loginUrl.searchParams.set("responseType", "code");
+    res.redirect(302, loginUrl.toString());
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
@@ -26,10 +47,10 @@ export function registerOAuthRoutes(app: Express) {
     const { nonce } = decodeOAuthState(state);
     const expectedNonce = parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE];
     if (!nonce || nonce !== expectedNonce) {
-      res.status(403).json({ error: "invalid oauth state" });
+      res.redirect(302, "/?authError=state");
       return;
     }
-    res.clearCookie(OAUTH_STATE_COOKIE, { path: "/", secure: true, sameSite: "none" });
+    res.clearCookie(OAUTH_STATE_COOKIE, { path: "/", secure: true, sameSite: "lax" });
 
     try {
       const tokenResponse = await sdk.exchangeCodeForToken(code, state);

@@ -1,11 +1,15 @@
 import { relations } from "drizzle-orm";
 import {
   artists,
+  collectiveMembers,
+  collectives,
   eventInterests,
   events,
   follows,
+  moderationReports,
   playlistTracks,
   playlists,
+  trackCredits,
   trackPlays,
   savedTracks,
   tracks,
@@ -19,6 +23,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   eventInterests: many(eventInterests),
   trackPlays: many(trackPlays),
   savedTracks: many(savedTracks),
+  collectives: many(collectives),
+  reports: many(moderationReports),
 }));
 
 export const artistsRelations = relations(artists, ({ one, many }) => ({
@@ -26,6 +32,18 @@ export const artistsRelations = relations(artists, ({ one, many }) => ({
   tracks: many(tracks),
   events: many(events),
   followers: many(follows),
+  collectiveMemberships: many(collectiveMembers),
+  credits: many(trackCredits),
+}));
+
+export const collectivesRelations = relations(collectives, ({ one, many }) => ({
+  owner: one(users, { fields: [collectives.ownerId], references: [users.id] }),
+  members: many(collectiveMembers),
+}));
+
+export const collectiveMembersRelations = relations(collectiveMembers, ({ one }) => ({
+  collective: one(collectives, { fields: [collectiveMembers.collectiveId], references: [collectives.id] }),
+  artist: one(artists, { fields: [collectiveMembers.artistId], references: [artists.id] }),
 }));
 
 export const tracksRelations = relations(tracks, ({ one, many }) => ({
@@ -33,6 +51,12 @@ export const tracksRelations = relations(tracks, ({ one, many }) => ({
   playlistTracks: many(playlistTracks),
   plays: many(trackPlays),
   savedBy: many(savedTracks),
+  credits: many(trackCredits),
+}));
+
+export const trackCreditsRelations = relations(trackCredits, ({ one }) => ({
+  track: one(tracks, { fields: [trackCredits.trackId], references: [tracks.id] }),
+  artist: one(artists, { fields: [trackCredits.artistId], references: [artists.id] }),
 }));
 
 export const eventsRelations = relations(events, ({ one, many }) => ({
@@ -69,4 +93,8 @@ export const trackPlaysRelations = relations(trackPlays, ({ one }) => ({
 export const savedTracksRelations = relations(savedTracks, ({ one }) => ({
   user: one(users, { fields: [savedTracks.userId], references: [users.id] }),
   track: one(tracks, { fields: [savedTracks.trackId], references: [tracks.id] }),
+}));
+
+export const moderationReportsRelations = relations(moderationReports, ({ one }) => ({
+  reporter: one(users, { fields: [moderationReports.reporterId], references: [users.id] }),
 }));

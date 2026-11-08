@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "ea78ccf8-392f-4887-aa13-95402b6cbcc7",
-  "prevId": "dc29cdeb-df24-41f8-9f9e-aab4e9814688",
+  "id": "bcf46319-0d55-4fc1-8698-e95e5225c56d",
+  "prevId": "10744e52-b7cd-4390-a6ed-fb383cfb9047",
   "tables": {
     "artists": {
       "name": "artists",
@@ -1076,6 +1076,27 @@
         "email": {
           "name": "email",
           "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "city": {
+          "name": "city",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "favoriteGenres": {
+          "name": "favoriteGenres",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "publicBio": {
+          "name": "publicBio",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

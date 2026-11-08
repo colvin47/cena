@@ -12,29 +12,99 @@
     {
       "idx": 1,
       "version": "5",
-      "when": 1793747265333,
-      "tag": "0001_magical_typhoid_mary",
+      "when": 1793732939620,
+      "tag": "0001_gray_puck",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "5",
-      "when": 1794003382281,
-      "tag": "0002_motionless_wildside",
+      "when": 1793733144698,
+      "tag": "0002_flowery_wolfsbane",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "5",
-      "when": 1794011974782,
-      "tag": "0003_yummy_omega_sentinel",
+      "when": 1794080766810,
+      "tag": "0003_lyrical_ultragirl",
       "breakpoints": true
     },
     {
       "idx": 4,
       "version": "5",
-      "when": 1794013678970,
-      "tag": "0004_curvy_weapon_omega",
+      "when": 1794084496229,
+      "tag": "0004_pink_logan",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1794090202237,
+      "tag": "0005_idempotent_tracks",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1794091919383,
+      "tag": "0006_audit_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1794092204114,
+      "tag": "0007_admin_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1794092369671,
+      "tag": "0008_collective_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1794092499358,
+      "tag": "0009_collective_content",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1794093398134,
+      "tag": "0010_collective_invites",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1794098415512,
+      "tag": "0011_collective_invite_declines",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1794100000000,
+      "tag": "0012_track_booklet_pages",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1794101000000,
+      "tag": "0013_release_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1794167350029,
+      "tag": "0014_external_track_sources",
       "breakpoints": true
     }
   ]

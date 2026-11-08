@@ -1,7 +1,13 @@
-import { and, asc, count, desc, eq, gte, like, or } from "drizzle-orm";
+import { createHash, randomBytes } from "node:crypto";
+import { and, asc, count, desc, eq, gte, isNull, like, lte, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   artists,
+  auditLogs,
+  collectiveMembers,
+  collectiveInvites,
+  collectives,
+  moderationReports,
   eventInterests,
   events,
   follows,
@@ -11,6 +17,7 @@ import {
   notifications,
   savedTracks,
   trackPlays,
+  trackCredits,
   tracks,
   users,
 } from "../drizzle/schema";
@@ -97,22 +104,22 @@ export async function getArtistByOwnerId(ownerId: number) {
   return result[0];
 }
 
-export async function createArtistProfile(ownerId: number, input: { name: string; handle: string; city: string; genre?: string; bio?: string }) {
+export async function createArtistProfile(ownerId: number, input: { name: string; handle: string; city: string; genre?: string; bio?: string; profileType?: "solo" | "band" | "mc" | "producer" | "dj" | "collective" | "label" | "venue"; manifesto?: string; supportUrl?: string; pixUrl?: string; merchUrl?: string }) {
   const db = await getDb();
   if (!db) return null;
   const existing = await getArtistByOwnerId(ownerId);
   if (existing) return existing;
-  const result = await db.insert(artists).values({ ownerId, name: input.name, handle: input.handle, city: input.city, genre: input.genre || null, bio: input.bio || null });
+  const result = await db.insert(artists).values({ ownerId, name: input.name, handle: input.handle, city: input.city, genre: input.genre || null, bio: input.bio || null, profileType: input.profileType || "solo", manifesto: input.manifesto || null, supportUrl: input.supportUrl || null, pixUrl: input.pixUrl || null, merchUrl: input.merchUrl || null });
   const created = await db.select().from(artists).where(eq(artists.id, Number(result[0].insertId))).limit(1);
   return created[0] ?? null;
 }
 
-export async function updateArtistProfile(ownerId: number, input: { name: string; handle: string; city: string; genre?: string; bio?: string; avatarUrl?: string; coverUrl?: string; instagramUrl?: string; bandcampUrl?: string }) {
+export async function updateArtistProfile(ownerId: number, input: { name: string; handle: string; city: string; genre?: string; bio?: string; profileType?: "solo" | "band" | "mc" | "producer" | "dj" | "collective" | "label" | "venue"; manifesto?: string; avatarUrl?: string; coverUrl?: string; instagramUrl?: string; bandcampUrl?: string; supportUrl?: string; pixUrl?: string; merchUrl?: string }) {
   const db = await getDb();
   if (!db) return null;
   const existing = await getArtistByOwnerId(ownerId);
   if (!existing) return null;
-  await db.update(artists).set({ ...input, genre: input.genre || null, bio: input.bio || null, avatarUrl: input.avatarUrl || null, coverUrl: input.coverUrl || null, instagramUrl: input.instagramUrl || null, bandcampUrl: input.bandcampUrl || null, updatedAt: new Date() }).where(eq(artists.ownerId, ownerId));
+  await db.update(artists).set({ ...input, genre: input.genre || null, bio: input.bio || null, manifesto: input.manifesto || null, avatarUrl: input.avatarUrl || null, coverUrl: input.coverUrl || null, instagramUrl: input.instagramUrl || null, bandcampUrl: input.bandcampUrl || null, supportUrl: input.supportUrl || null, pixUrl: input.pixUrl || null, merchUrl: input.merchUrl || null, updatedAt: new Date() }).where(eq(artists.ownerId, ownerId));
   return getArtistByOwnerId(ownerId);
 }
 
@@ -130,10 +137,22 @@ export async function getArtistStats(ownerId: number) {
   return { plays: Number(playRows[0]?.total ?? 0), followers: Number(followerRows[0]?.total ?? 0), events: eventRows.map(event => ({ ...event, interest: Number(event.interest ?? 0) })), topTracks: topTracks.map(track => ({ ...track, plays: Number(track.plays ?? 0) })) };
 }
 
+export async function getArtistCatalog(ownerId: number) {
+  const db = await getDb();
+  if (!db) return { tracks: [], events: [] };
+  const artist = await getArtistByOwnerId(ownerId);
+  if (!artist) return { tracks: [], events: [] };
+  const [artistTracks, artistEvents] = await Promise.all([
+    db.select({ id: tracks.id, title: tracks.title, artist: artists.name, artistId: tracks.artistId, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, sourceType: tracks.sourceType, externalUrl: tracks.externalUrl, description: tracks.description, releaseType: tracks.releaseType, releaseDate: tracks.releaseDate, creditsNote: tracks.creditsNote, bookletPages: tracks.bookletPages }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.artistId, artist.id), eq(tracks.visibility, "public"), eq(tracks.moderationStatus, "published"))).orderBy(desc(tracks.createdAt)).limit(100),
+    db.select({ id: events.id, title: events.name, place: events.venue, city: events.city, eventDate: events.eventDate, description: events.description, ticketUrl: events.ticketUrl, eventType: events.eventType, admissionType: events.admissionType, accessibility: events.accessibility, safeSpace: events.safeSpace, ageRating: events.ageRating, program: events.program, canceledAt: events.canceledAt, artistId: events.artistId }).from(events).where(eq(events.artistId, artist.id)).orderBy(asc(events.eventDate)).limit(100),
+  ]);
+  return { tracks: artistTracks, events: artistEvents };
+}
+
 export async function getTrackDetail(trackId: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select({ id: tracks.id, title: tracks.title, artistId: tracks.artistId, artist: artists.name, handle: artists.handle, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, description: tracks.description }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.id, trackId), eq(tracks.moderationStatus, "published"))).limit(1);
+  const result = await db.select({ id: tracks.id, title: tracks.title, artistId: tracks.artistId, artist: artists.name, handle: artists.handle, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, sourceType: tracks.sourceType, externalUrl: tracks.externalUrl, description: tracks.description, releaseType: tracks.releaseType, releaseDate: tracks.releaseDate, visibility: tracks.visibility, creditsNote: tracks.creditsNote, bookletPages: tracks.bookletPages }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.id, trackId), eq(tracks.moderationStatus, "published"), eq(tracks.visibility, "public"), or(isNull(tracks.releaseDate), lte(tracks.releaseDate, new Date())))).limit(1);
   return result[0] ?? null;
 }
 
@@ -144,15 +163,19 @@ export async function getEventDetail(eventId: number) {
   return result[0] ?? null;
 }
 
+function citySearchPattern(city: string) {
+  return city.split(",")[0]?.trim() || city.trim();
+}
+
 export async function findArtists(searchTerm?: string, city?: string) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
   if (searchTerm) {
     const pattern = `%${searchTerm}%`;
-    conditions.push(or(like(artists.name, pattern), like(artists.handle, pattern), like(artists.genre, pattern), like(artists.city, pattern)));
+    conditions.push(or(like(artists.name, pattern), like(artists.handle, pattern), like(artists.genre, pattern), like(artists.city, pattern), like(artists.bio, pattern), like(artists.manifesto, pattern)));
   }
-  if (city) conditions.push(eq(artists.city, city));
+  if (city) conditions.push(like(artists.city, `${citySearchPattern(city)}%`));
   return db.select().from(artists).where(conditions.length ? and(...conditions) : undefined).orderBy(asc(artists.name)).limit(50);
 }
 
@@ -165,18 +188,23 @@ export async function findTracks(searchTerm?: string, genre?: string, city?: str
     conditions.push(or(like(tracks.title, pattern), like(tracks.album, pattern), like(tracks.genre, pattern), like(tracks.city, pattern), like(artists.name, pattern), like(artists.handle, pattern)));
   }
   if (genre && genre !== "Tudo") conditions.push(eq(tracks.genre, genre));
-  if (city) conditions.push(eq(tracks.city, city));
+  if (city) conditions.push(like(tracks.city, `${citySearchPattern(city)}%`));
   return db.select({
     id: tracks.id,
     title: tracks.title,
     artistId: tracks.artistId,
     genre: tracks.genre,
     city: tracks.city,
+    releaseType: tracks.releaseType,
+    sourceType: tracks.sourceType,
+    externalUrl: tracks.externalUrl,
+    creditsNote: tracks.creditsNote,
     duration: tracks.durationSeconds,
     cover: tracks.coverUrl,
     audioUrl: tracks.audioUrl,
+    bookletPages: tracks.bookletPages,
     artist: artists.name,
-  }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.moderationStatus, "published"), ...(conditions.length ? conditions : []))).orderBy(desc(tracks.createdAt)).limit(50);
+  }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.moderationStatus, "published"), eq(tracks.visibility, "public"), or(isNull(tracks.releaseDate), lte(tracks.releaseDate, new Date())), ...(conditions.length ? conditions : []))).orderBy(desc(tracks.createdAt)).limit(50);
 }
 
 export async function listNotifications(userId: number) {
@@ -192,6 +220,15 @@ export async function markNotificationsRead(userId: number) {
   return true;
 }
 
+export async function createCustomNotification(input: { title: string; body: string; href?: string }) {
+  const db = await getDb();
+  if (!db) return { created: 0 };
+  const recipients = await db.select({ id: users.id }).from(users);
+  if (!recipients.length) return { created: 0 };
+  await db.insert(notifications).values(recipients.map(recipient => ({ userId: recipient.id, kind: "system" as const, title: input.title, body: input.body, href: input.href || null })));
+  return { created: recipients.length };
+}
+
 export async function takedownTrack(ownerId: number, trackId: number, reason?: string) {
   const db = await getDb();
   if (!db) return false;
@@ -204,11 +241,16 @@ export async function takedownTrack(ownerId: number, trackId: number, reason?: s
   return Number(result[0]?.affectedRows ?? 0) > 0;
 }
 
-export async function listEvents(city?: string) {
+export async function listEvents(city?: string, searchTerm?: string) {
   const db = await getDb();
   if (!db) return [];
-  const conditions = [gte(events.eventDate, new Date())];
-  if (city) conditions.push(eq(events.city, city));
+  const conditions = [gte(events.eventDate, new Date()), isNull(events.canceledAt)];
+  if (city) conditions.push(like(events.city, `${citySearchPattern(city)}%`));
+  if (searchTerm) {
+    const pattern = `%${searchTerm}%`;
+    const searchCondition = or(like(events.name, pattern), like(events.venue, pattern), like(events.city, pattern), like(events.description, pattern), like(events.program, pattern), like(artists.name, pattern));
+    if (searchCondition) conditions.push(searchCondition);
+  }
   return db.select({
     id: events.id,
     title: events.name,
@@ -217,6 +259,13 @@ export async function listEvents(city?: string) {
     eventDate: events.eventDate,
     description: events.description,
     ticketUrl: events.ticketUrl,
+    eventType: events.eventType,
+    admissionType: events.admissionType,
+    accessibility: events.accessibility,
+    safeSpace: events.safeSpace,
+    ageRating: events.ageRating,
+    program: events.program,
+    canceledAt: events.canceledAt,
     artistId: events.artistId,
     artist: artists.name,
     interest: count(eventInterests.eventId),
@@ -231,12 +280,13 @@ export async function listArtistEvents(ownerId: number) {
   return db.select().from(events).where(eq(events.artistId, artist.id)).orderBy(asc(events.eventDate)).limit(50);
 }
 
-export async function updateArtistEvent(ownerId: number, eventId: number, input: { name: string; venue: string; city: string; eventDate: Date; description?: string; ticketUrl?: string }) {
+export async function updateArtistEvent(ownerId: number, eventId: number, input: { name: string; venue: string; city: string; eventDate: Date; description?: string; ticketUrl?: string; eventType?: "show" | "battle" | "cypher" | "cultural_round" | "diy_festival" | "occupation" | "zine_fair" | "workshop" | "listening_party" | "release"; admissionType?: "ticket" | "free" | "contribution"; accessibility?: string; safeSpace?: boolean; ageRating?: string; program?: string }) {
   const db = await getDb();
   if (!db) return null;
   const artist = await getArtistByOwnerId(ownerId);
   if (!artist) return null;
-  await db.update(events).set({ ...input, description: input.description || null, ticketUrl: input.ticketUrl || null, updatedAt: new Date() }).where(and(eq(events.id, eventId), eq(events.artistId, artist.id)));
+  const { name, venue, city, eventDate, eventType, admissionType, description, ticketUrl, accessibility, safeSpace, ageRating, program } = input;
+  await db.update(events).set({ name, venue, city, eventDate, eventType, admissionType, description: description || null, ticketUrl: ticketUrl || null, accessibility: accessibility || null, safeSpace, ageRating: ageRating || null, program: program || null, updatedAt: new Date() }).where(and(eq(events.id, eventId), eq(events.artistId, artist.id)));
   const result = await db.select().from(events).where(and(eq(events.id, eventId), eq(events.artistId, artist.id))).limit(1);
   return result[0] ?? null;
 }
@@ -248,6 +298,194 @@ export async function deleteArtistEvent(ownerId: number, eventId: number) {
   if (!artist) return false;
   const result = await db.delete(events).where(and(eq(events.id, eventId), eq(events.artistId, artist.id)));
   return Number(result[0]?.affectedRows ?? 0) > 0;
+}
+
+export async function cancelArtistEvent(ownerId: number, eventId: number, reason?: string) {
+  const db = await getDb();
+  if (!db) return false;
+  const artist = await getArtistByOwnerId(ownerId);
+  if (!artist) return false;
+  const result = await db.update(events).set({ canceledAt: new Date(), cancelReason: reason || "Evento cancelado pelo artista", updatedAt: new Date() }).where(and(eq(events.id, eventId), eq(events.artistId, artist.id)));
+  if (Number(result[0]?.affectedRows ?? 0) > 0) {
+    const interested = await db.select({ userId: eventInterests.userId }).from(eventInterests).where(eq(eventInterests.eventId, eventId));
+    if (interested.length) await db.insert(notifications).values(interested.map(row => ({ userId: row.userId, kind: "event" as const, title: "Evento cancelado", body: reason || "Um evento da sua agenda foi cancelado pelo artista.", href: "/eventos" })));
+  }
+  return Number(result[0]?.affectedRows ?? 0) > 0;
+}
+
+export async function writeAuditLog(input: { actorId: number; action: string; targetType: string; targetId?: number; metadata?: Record<string, unknown> }) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(auditLogs).values({ actorId: input.actorId, action: input.action, targetType: input.targetType, targetId: input.targetId ?? null, metadata: input.metadata ? JSON.stringify(input.metadata) : null });
+  return Number(result[0].insertId);
+}
+export async function listAuditLogs() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ id: auditLogs.id, action: auditLogs.action, targetType: auditLogs.targetType, targetId: auditLogs.targetId, metadata: auditLogs.metadata, createdAt: auditLogs.createdAt, actorName: users.name }).from(auditLogs).leftJoin(users, eq(auditLogs.actorId, users.id)).orderBy(desc(auditLogs.createdAt)).limit(50);
+}
+export async function getCollectivePermission(userId: number, collectiveId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const owner = await db.select({ id: collectives.id }).from(collectives).where(and(eq(collectives.id, collectiveId), eq(collectives.ownerId, userId))).limit(1);
+  if (owner[0]) return "owner" as const;
+  const member = await db.select({ permission: collectiveMembers.permission }).from(collectiveMembers).innerJoin(artists, eq(artists.id, collectiveMembers.artistId)).where(and(eq(collectiveMembers.collectiveId, collectiveId), eq(artists.ownerId, userId))).limit(1);
+  return member[0]?.permission ?? null;
+}
+export async function createCollective(ownerId: number, input: { name: string; handle: string; type: "collective" | "label" | "venue" | "media" | "festival"; city: string; bio?: string; manifesto?: string; supportUrl?: string; pixUrl?: string }) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(collectives).values({ ownerId, ...input, bio: input.bio || null, manifesto: input.manifesto || null, supportUrl: input.supportUrl || null, pixUrl: input.pixUrl || null });
+  const id = Number(result[0].insertId);
+  await writeAuditLog({ actorId: ownerId, action: "collective.created", targetType: "collective", targetId: id, metadata: { name: input.name, city: input.city } });
+  return db.select().from(collectives).where(eq(collectives.id, id)).limit(1).then(rows => rows[0] ?? null);
+}
+export async function listUserCollectives(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ id: collectives.id, name: collectives.name, handle: collectives.handle, type: collectives.type, city: collectives.city, ownerId: collectives.ownerId, memberPermission: collectiveMembers.permission }).from(collectives).leftJoin(collectiveMembers, eq(collectiveMembers.collectiveId, collectives.id)).leftJoin(artists, eq(artists.id, collectiveMembers.artistId)).where(or(eq(collectives.ownerId, userId), eq(artists.ownerId, userId))).orderBy(asc(collectives.name));
+  return rows.map(row => ({ id: row.id, name: row.name, handle: row.handle, type: row.type, city: row.city, permission: row.ownerId === userId ? "owner" : row.memberPermission }));
+}
+export async function addCollectiveMember(ownerId: number, input: { collectiveId: number; artistId: number; permission: "editor" | "agenda" | "member"; memberRole?: string }) {
+  const db = await getDb();
+  if (!db) return false;
+  const collective = await db.select({ id: collectives.id }).from(collectives).where(and(eq(collectives.id, input.collectiveId), eq(collectives.ownerId, ownerId))).limit(1);
+  if (!collective[0]) return false;
+  await db.insert(collectiveMembers).values({ collectiveId: input.collectiveId, artistId: input.artistId, permission: input.permission, memberRole: input.memberRole || null }).onDuplicateKeyUpdate({ set: { permission: input.permission, memberRole: input.memberRole || null } });
+  await writeAuditLog({ actorId: ownerId, action: "collective.member_added", targetType: "collective", targetId: input.collectiveId, metadata: { artistId: input.artistId, permission: input.permission } });
+  return true;
+}
+export async function createCollectiveInvite(ownerId: number, input: { collectiveId: number; permission: "editor" | "agenda" | "member"; email?: string }) {
+  const db = await getDb();
+  if (!db) return null;
+  const collective = await db.select({ id: collectives.id }).from(collectives).where(and(eq(collectives.id, input.collectiveId), eq(collectives.ownerId, ownerId))).limit(1);
+  if (!collective[0]) return null;
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await db.insert(collectiveInvites).values({ collectiveId: input.collectiveId, inviterId: ownerId, tokenHash, permission: input.permission, email: input.email || null, expiresAt });
+  await writeAuditLog({ actorId: ownerId, action: "collective.invite_created", targetType: "collective", targetId: input.collectiveId, metadata: { permission: input.permission, email: input.email || null } });
+  return { token, expiresAt };
+}
+export async function listPendingCollectiveInvites(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const user = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!user[0]?.email) return [];
+  return db.select({ id: collectiveInvites.id, collectiveId: collectiveInvites.collectiveId, collectiveName: collectives.name, collectiveHandle: collectives.handle, inviterName: users.name, permission: collectiveInvites.permission, expiresAt: collectiveInvites.expiresAt }).from(collectiveInvites).innerJoin(collectives, eq(collectives.id, collectiveInvites.collectiveId)).innerJoin(users, eq(users.id, collectiveInvites.inviterId)).where(and(eq(collectiveInvites.email, user[0].email), isNull(collectiveInvites.acceptedAt), isNull(collectiveInvites.declinedAt), gte(collectiveInvites.expiresAt, new Date()))).orderBy(desc(collectiveInvites.createdAt));
+}
+export async function declineCollectiveInvite(userId: number, inviteId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const user = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!user[0]?.email) return false;
+  const result = await db.update(collectiveInvites).set({ declinedAt: new Date() }).where(and(eq(collectiveInvites.id, inviteId), eq(collectiveInvites.email, user[0].email), isNull(collectiveInvites.acceptedAt), isNull(collectiveInvites.declinedAt)));
+  return Number(result[0]?.affectedRows ?? 0) > 0;
+}
+export async function acceptPendingCollectiveInvite(userId: number, inviteId: number) {
+  const db = await getDb();
+  if (!db) return { accepted: false, reason: "DATABASE_UNAVAILABLE" as const };
+  const user = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!user[0]?.email) return { accepted: false, reason: "EMAIL_REQUIRED" as const };
+  const rows = await db.select({ id: collectiveInvites.id, collectiveId: collectiveInvites.collectiveId, permission: collectiveInvites.permission, expiresAt: collectiveInvites.expiresAt }).from(collectiveInvites).where(and(eq(collectiveInvites.id, inviteId), eq(collectiveInvites.email, user[0].email), isNull(collectiveInvites.acceptedAt), isNull(collectiveInvites.declinedAt), gte(collectiveInvites.expiresAt, new Date()))).limit(1);
+  const invite = rows[0];
+  if (!invite) return { accepted: false, reason: "INVITE_INVALID" as const };
+  const artist = await db.select({ id: artists.id }).from(artists).where(eq(artists.ownerId, userId)).limit(1);
+  if (!artist[0]) return { accepted: false, reason: "ARTIST_PROFILE_REQUIRED" as const };
+  await db.insert(collectiveMembers).values({ collectiveId: invite.collectiveId, artistId: artist[0].id, permission: invite.permission }).onDuplicateKeyUpdate({ set: { permission: invite.permission } });
+  await db.update(collectiveInvites).set({ acceptedAt: new Date() }).where(eq(collectiveInvites.id, invite.id));
+  await writeAuditLog({ actorId: userId, action: "collective.invite_accepted", targetType: "collective", targetId: invite.collectiveId, metadata: { permission: invite.permission, source: "pending" } });
+  return { accepted: true as const, collectiveId: invite.collectiveId };
+}
+export async function previewCollectiveInvite(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const rows = await db.select({ collectiveName: collectives.name, collectiveHandle: collectives.handle, inviterName: users.name, permission: collectiveInvites.permission, expiresAt: collectiveInvites.expiresAt }).from(collectiveInvites).innerJoin(collectives, eq(collectives.id, collectiveInvites.collectiveId)).innerJoin(users, eq(users.id, collectiveInvites.inviterId)).where(and(eq(collectiveInvites.tokenHash, tokenHash), isNull(collectiveInvites.acceptedAt), isNull(collectiveInvites.declinedAt), gte(collectiveInvites.expiresAt, new Date()))).limit(1);
+  return rows[0] ?? null;
+}
+export async function acceptCollectiveInvite(userId: number, token: string) {
+  const db = await getDb();
+  if (!db) return { accepted: false, reason: "DATABASE_UNAVAILABLE" as const };
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const rows = await db.select({ id: collectiveInvites.id, collectiveId: collectiveInvites.collectiveId, permission: collectiveInvites.permission, expiresAt: collectiveInvites.expiresAt }).from(collectiveInvites).where(and(eq(collectiveInvites.tokenHash, tokenHash), isNull(collectiveInvites.acceptedAt), isNull(collectiveInvites.declinedAt))).limit(1);
+  const invite = rows[0];
+  if (!invite || invite.expiresAt.getTime() < Date.now()) return { accepted: false, reason: "INVITE_INVALID" as const };
+  const artist = await db.select({ id: artists.id }).from(artists).where(eq(artists.ownerId, userId)).limit(1);
+  if (!artist[0]) return { accepted: false, reason: "ARTIST_PROFILE_REQUIRED" as const };
+  await db.insert(collectiveMembers).values({ collectiveId: invite.collectiveId, artistId: artist[0].id, permission: invite.permission }).onDuplicateKeyUpdate({ set: { permission: invite.permission } });
+  await db.update(collectiveInvites).set({ acceptedAt: new Date() }).where(eq(collectiveInvites.id, invite.id));
+  await writeAuditLog({ actorId: userId, action: "collective.invite_accepted", targetType: "collective", targetId: invite.collectiveId, metadata: { permission: invite.permission } });
+  return { accepted: true as const, collectiveId: invite.collectiveId };
+}
+export async function listCollectiveMembers(userId: number, collectiveId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const owner = await db.select({ id: collectives.id }).from(collectives).where(and(eq(collectives.id, collectiveId), eq(collectives.ownerId, userId))).limit(1);
+  if (!owner[0]) return [];
+  return db.select({ artistId: artists.id, name: artists.name, handle: artists.handle, permission: collectiveMembers.permission, memberRole: collectiveMembers.memberRole }).from(collectiveMembers).innerJoin(artists, eq(artists.id, collectiveMembers.artistId)).where(eq(collectiveMembers.collectiveId, collectiveId)).orderBy(asc(artists.name));
+}
+export async function removeCollectiveMember(ownerId: number, input: { collectiveId: number; artistId: number }) {
+  const db = await getDb();
+  if (!db) return false;
+  const collective = await db.select({ id: collectives.id }).from(collectives).where(and(eq(collectives.id, input.collectiveId), eq(collectives.ownerId, ownerId))).limit(1);
+  if (!collective[0]) return false;
+  const result = await db.delete(collectiveMembers).where(and(eq(collectiveMembers.collectiveId, input.collectiveId), eq(collectiveMembers.artistId, input.artistId)));
+  const removed = Number(result[0]?.affectedRows ?? 0) > 0;
+  if (removed) await writeAuditLog({ actorId: ownerId, action: "collective.member_removed", targetType: "collective", targetId: input.collectiveId, metadata: { artistId: input.artistId } });
+  return removed;
+}
+export async function updateCollectiveMember(ownerId: number, input: { collectiveId: number; artistId: number; permission: "editor" | "agenda" | "member"; memberRole?: string }) {
+  const db = await getDb();
+  if (!db) return false;
+  const collective = await db.select({ id: collectives.id }).from(collectives).where(and(eq(collectives.id, input.collectiveId), eq(collectives.ownerId, ownerId))).limit(1);
+  if (!collective[0]) return false;
+  const result = await db.update(collectiveMembers).set({ permission: input.permission, memberRole: input.memberRole || null }).where(and(eq(collectiveMembers.collectiveId, input.collectiveId), eq(collectiveMembers.artistId, input.artistId)));
+  if (Number(result[0]?.affectedRows ?? 0) > 0) await writeAuditLog({ actorId: ownerId, action: "collective.member_updated", targetType: "collective", targetId: input.collectiveId, metadata: { artistId: input.artistId, permission: input.permission } });
+  return Number(result[0]?.affectedRows ?? 0) > 0;
+}
+export async function createModerationReport(input: { reporterId: number; targetType: "track" | "artist" | "event" | "collective"; targetId: number; reason: string; details?: string }) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(moderationReports).values({ reporterId: input.reporterId, targetType: input.targetType, targetId: input.targetId, reason: input.reason, details: input.details || null });
+  return Number(result[0].insertId);
+}
+export async function listModerationReports(status?: "open" | "reviewed" | "resolved" | "rejected") {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: moderationReports.id,
+    targetType: moderationReports.targetType,
+    targetId: moderationReports.targetId,
+    reason: moderationReports.reason,
+    details: moderationReports.details,
+    status: moderationReports.status,
+    createdAt: moderationReports.createdAt,
+    resolvedAt: moderationReports.resolvedAt,
+    reporterName: users.name,
+  }).from(moderationReports).leftJoin(users, eq(moderationReports.reporterId, users.id)).where(status ? eq(moderationReports.status, status) : undefined).orderBy(asc(moderationReports.createdAt)).limit(100);
+}
+export async function updateModerationReport(reportId: number, status: "open" | "reviewed" | "resolved" | "rejected") {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.update(moderationReports).set({ status, resolvedAt: status === "resolved" || status === "rejected" ? new Date() : null }).where(eq(moderationReports.id, reportId));
+  return Number(result[0]?.affectedRows ?? 0) > 0;
+}
+export async function hideReportedContent(reportId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const report = await db.select({ targetType: moderationReports.targetType, targetId: moderationReports.targetId }).from(moderationReports).where(eq(moderationReports.id, reportId)).limit(1);
+  if (!report[0]) return false;
+  let affected = 0;
+  if (report[0].targetType === "track") {
+    const result = await db.update(tracks).set({ moderationStatus: "takedown", takedownReason: "Ocultada após revisão da comunidade", removedAt: new Date(), updatedAt: new Date() }).where(eq(tracks.id, report[0].targetId));
+    affected = Number(result[0]?.affectedRows ?? 0);
+  } else if (report[0].targetType === "event") {
+    const result = await db.update(events).set({ canceledAt: new Date(), cancelReason: "Evento ocultado após revisão da comunidade", updatedAt: new Date() }).where(eq(events.id, report[0].targetId));
+    affected = Number(result[0]?.affectedRows ?? 0);
+  }
+  if (affected > 0) await updateModerationReport(reportId, "resolved");
+  return affected > 0;
 }
 
 export async function toggleFollow(userId: number, artistId: number) {

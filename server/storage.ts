@@ -31,9 +31,10 @@ function appendHashSuffix(relKey: string): string {
 export async function storagePresignPut(
   relKey: string,
   contentType: string,
+  options?: { unique?: boolean },
 ): Promise<{ key: string; url: string; stableUrl: string }> {
   const { forgeUrl, forgeKey } = getForgeConfig();
-  const key = appendHashSuffix(normalizeKey(relKey));
+  const key = options?.unique === false ? normalizeKey(relKey) : appendHashSuffix(normalizeKey(relKey));
   const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
   presignUrl.searchParams.set("path", key);
 
