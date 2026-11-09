@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { artists, events, follows, notifications, tracks } from "../drizzle/schema";
-import { addTrackToPlaylist, cancelArtistEvent, createArtistProfile, createCustomNotification, addCollectiveMember, createCollective, createModerationReport, createPlaylist, hideReportedContent, acceptCollectiveInvite, acceptPendingCollectiveInvite, createCollectiveInvite, declineCollectiveInvite, getCollectivePermission, listAuditLogs, listCollectiveMembers, listPendingCollectiveInvites, previewCollectiveInvite, listModerationReports, listUserCollectives, removeCollectiveMember, updateCollectiveMember, updateModerationReport, writeAuditLog, findArtists, findTracks, getArtistByOwnerId, getArtistCatalog, getArtistStats, getDb, getEventDetail, getTrackDetail, getUserLibrary, listArtistEvents, listEvents, listNotifications, markNotificationsRead, recordTrackPlay, setAccountType, takedownTrack, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistEvent, updateArtistProfile, updateListenerProfile, deleteArtistEvent } from "./db";
+import { addTrackToPlaylist, cancelArtistEvent, createArtistProfile, createCustomNotification, addCollectiveMember, createCollective, createModerationReport, createPlaylist, hideReportedContent, acceptCollectiveInvite, acceptPendingCollectiveInvite, createCollectiveInvite, declineCollectiveInvite, getCollectivePermission, listAuditLogs, listCollectiveMembers, listPendingCollectiveInvites, previewCollectiveInvite, listModerationReports, listUserCollectives, removeCollectiveMember, updateCollectiveMember, updateModerationReport, writeAuditLog, findArtists, findTracks, getArtistByOwnerId, getArtistCatalog, getArtistStats, getArtistPublicDetail, getDb, getEventDetail, getPlaylistDetail, getTrackDetail, getUserLibrary, listArtistEvents, listEvents, listNotifications, markNotificationsRead, recordTrackPlay, setAccountType, takedownTrack, toggleEventInterest, toggleFollow, toggleSavedTrack, updateArtistEvent, updateArtistProfile, updateListenerProfile, deleteArtistEvent } from "./db";
 import { storageDelete, storagePresignPut } from "./storage";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -69,14 +69,18 @@ export const appRouter = router({
   scene: router({
     discovery: publicProcedure.input(discoveryInput).query(async ({ input }) => {
       const db = await getDb();
-      if (!db) return { ...demoOrEmpty(input), city: input.city, genres: sceneGenres, playlists: scenePlaylists, activity: sceneActivity };
+      if (!db) {
+        const demo = demoOrEmpty(input);
+        const isDemo = demo.source === "seed";
+        return { ...demo, city: input.city, genres: sceneGenres, playlists: isDemo ? scenePlaylists : [], activity: isDemo ? sceneActivity : [] };
+      }
       const [dbTracks, dbArtists, dbEvents] = await Promise.all([
         findTracks(input.search, input.genre, input.city),
         findArtists(input.search, input.city),
         listEvents(input.city, input.search),
       ]);
       if (!dbTracks.length && !dbArtists.length && !dbEvents.length) {
-        return { tracks: [], artists: [], events: [], source: "empty" as const, city: input.city, genres: sceneGenres, playlists: scenePlaylists, activity: sceneActivity };
+        return { tracks: [], artists: [], events: [], source: "empty" as const, city: input.city, genres: sceneGenres, playlists: [], activity: [] };
       }
       return {
         tracks: dbTracks.map(track => ({ ...track, duration: track.duration ?? 0, releaseType: track.releaseType ?? "single", creditsNote: track.creditsNote ?? "", cover: track.cover ?? sceneTracks[0].cover, embedUrl: track.externalUrl ? parseExternalTrackUrl(track.externalUrl)?.embedUrl ?? null : null, accent: "#c8f36a" })),
@@ -85,8 +89,8 @@ export const appRouter = router({
         source: "database" as const,
         city: input.city,
         genres: sceneGenres,
-        playlists: scenePlaylists,
-        activity: sceneActivity,
+        playlists: [],
+        activity: [],
       };
     }),
 
@@ -130,6 +134,8 @@ export const appRouter = router({
     myEvents: protectedProcedure.query(({ ctx }) => listArtistEvents(ctx.user.id)),
     trackDetail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getTrackDetail(input.id)),
     eventDetail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getEventDetail(input.id)),
+    artistDetail: publicProcedure.input(z.object({ handle: z.string().trim().min(1).max(80).regex(/^@?[a-zA-Z0-9_]+$/) })).query(({ input }) => getArtistPublicDetail(input.handle)),
+    playlistDetail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(({ ctx, input }) => getPlaylistDetail(input.id, ctx.user?.id)),
 
     createArtistProfile: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(160), handle: z.string().trim().min(2).max(80).regex(/^@?[a-zA-Z0-9_]+$/), city: z.string().trim().min(2).max(120), profileType: z.enum(["solo", "band", "mc", "producer", "dj", "collective", "label", "venue"]).default("solo"), genre: z.string().trim().max(80).optional(), bio: z.string().trim().max(1000).optional(), manifesto: z.string().trim().max(1500).optional(), supportUrl: z.string().url().max(2048).optional(), pixUrl: z.string().trim().max(255).optional(), merchUrl: z.string().url().max(2048).optional() })).mutation(async ({ ctx, input }) => {
       if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Ative o perfil de artista antes de continuar." });

@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
+    "dev": "NODE_ENV=development tsx server/_core/index.ts",
     "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
@@ -15,7 +15,7 @@
     "db:reconcile": "node scripts/reconcile-legacy-schema.mjs",
     "dev:static": "vite --host 0.0.0.0 --port ${PORT:-3000} --strictPort",
     "build:static": "vite build",
-    "test:integration": "vitest run server/**/*.integration.test.ts"
+    "test:integration": "test -n \"$TEST_DATABASE_URL\" && vitest run server/**/*.integration.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

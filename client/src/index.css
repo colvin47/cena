@@ -507,3 +507,133 @@ img, video, audio, iframe { max-width: 100%; }
   .profile-empty-state { align-items: flex-start; flex-wrap: wrap; }
   .profile-empty-state .primary-button { width: 100%; }
 }
+
+
+/* Detalhes canônicos de artista, faixa, evento e playlist */
+.entity-detail-state {
+  display: grid;
+  min-height: 240px;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #b8b8c2;
+  text-align: center;
+}
+.entity-detail-state strong { color: #f3f2ee; font-size: 1.15rem; }
+.entity-detail-state p { max-width: 40rem; margin: 0; line-height: 1.6; }
+.entity-detail-state .primary-button { margin-top: 8px; }
+.entity-detail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.entity-detail-label {
+  color: #c8f36a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.entity-detail-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.entity-detail-card { margin-top: 24px; }
+.entity-detail-track-list { display: grid; gap: 8px; }
+.entity-demo-notice {
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  border: 1px solid rgba(200, 243, 106, 0.24);
+  border-radius: 12px;
+  background: rgba(200, 243, 106, 0.07);
+  color: #d7e8b4;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.playlist-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.playlist-card-actions .text-button { min-height: 36px; }
+.activity-empty { margin: 10px 0; color: #aaaab5; font-size: 0.9rem; }
+@media (max-width: 640px) {
+  .entity-detail-toolbar { align-items: flex-start; flex-direction: column; }
+  .entity-detail-actions { width: 100%; }
+  .entity-detail-actions > * { flex: 1 1 auto; }
+}
+
+.data-mode.is-empty { border-color: rgba(178, 178, 192, 0.24); color: #b6b6c2; }
+.data-mode.is-unavailable { border-color: rgba(255, 118, 95, 0.35); color: #ff9a88; }
+.demo-content-notice {
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  border: 1px solid rgba(240, 189, 116, 0.28);
+  border-radius: 12px;
+  background: rgba(240, 189, 116, 0.07);
+  color: #f0c98f;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.entity-detail-page .detail-description { max-width: 70ch; line-height: 1.75; color: #c5c4ce; }
+.entity-detail-facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.entity-detail-facts > span {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #c8c6d2;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+.playlist-detail-heading { display: flex; align-items: center; gap: 18px; margin: 24px 0; }
+.playlist-detail-heading h1 { margin: 0 0 8px; }
+.playlist-detail-heading p { margin: 5px 0; color: #b8b7c2; }
+.entity-playlist-tracks { display: grid; gap: 8px; margin-top: 24px; }
+.entity-track-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.entity-track-row > img { width: 54px; height: 54px; flex: 0 0 54px; border-radius: 10px; object-fit: cover; }
+.entity-track-copy { display: grid; flex: 1; min-width: 0; gap: 4px; }
+.entity-track-copy strong { overflow: hidden; color: #f3f2ee; text-overflow: ellipsis; white-space: nowrap; }
+.entity-track-copy span { overflow: hidden; color: #a7a6b2; font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+.entity-track-actions { display: flex; flex: 0 0 auto; gap: 4px; }
+.entity-track-actions .icon-button { width: 34px; height: 34px; }
+.event-canceled-notice { margin: 18px 0; padding: 12px 15px; border-radius: 10px; background: rgba(255, 118, 95, 0.1); color: #ff9a88; }
+@media (max-width: 640px) {
+  .playlist-detail-heading { align-items: flex-start; }
+  .entity-track-row { align-items: flex-start; flex-wrap: wrap; }
+  .entity-track-copy { min-height: 54px; justify-content: center; }
+  .entity-track-actions { width: 100%; justify-content: flex-end; }
+}
+
+
+/* Brazil city picker: full-state browsing and searchable municipal options. */
+.city-picker-input-form { width: 100%; min-width: 0; min-height: 42px; padding: 0 12px; background: var(--plum-900); border: 1px solid var(--line); border-radius: 10px; outline: 0; color: var(--ink); font-size: 12px; }
+.city-picker-input-form:focus { border-color: var(--lime); }
+.city-chip .city-picker-input { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.city-picker-popover { box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; padding: 14px; color: var(--ink); background: var(--plum-900); border: 1px solid rgba(200,243,106,.25); border-radius: 16px; box-shadow: 0 22px 70px rgba(0,0,0,.58); font-size: 12px; }
+.city-picker-popover-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+.city-picker-popover-header > div { display: grid; gap: 4px; }
+.city-picker-popover-header strong { color: var(--ink); font-size: 14px; }
+.city-picker-popover-header span, .city-picker-nearby-note { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.city-picker-close { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; padding: 0; background: var(--plum-850); border: 1px solid var(--line); border-radius: 9px; color: var(--muted); font-size: 20px; line-height: 1; }
+.city-picker-state-label { display: grid; gap: 6px; margin: 10px 0 12px; color: var(--muted); font-size: 10px; font-weight: 750; }
+.city-picker-state-label select { width: 100%; min-height: 40px; padding: 0 10px; background: var(--plum-950); border: 1px solid var(--line); border-radius: 9px; color: var(--ink); font: inherit; font-size: 12px; }
+.city-picker-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 8px; color: var(--muted); font-size: 10px; font-weight: 750; }
+.city-picker-list-heading button, .city-picker-status button, .city-picker-more { padding: 5px 8px; background: rgba(200,243,106,.08); border: 1px solid rgba(200,243,106,.2); border-radius: 8px; color: var(--lime); font: inherit; font-size: 10px; font-weight: 750; }
+.city-picker-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; max-height: 285px; overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
+.city-picker-option { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; min-height: 38px; padding: 7px 9px; background: rgba(255,255,255,.025); border: 1px solid transparent; border-radius: 9px; color: var(--ink); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
+.city-picker-option > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.city-picker-option:hover, .city-picker-option.is-active, .city-picker-option[aria-selected="true"] { background: rgba(200,243,106,.09); border-color: rgba(200,243,106,.28); }
+.city-picker-option-uf { flex: 0 0 auto; color: var(--lime); font-size: 10px; font-weight: 800; }
+.city-picker-status { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; margin: 0; color: var(--muted); font-size: 11px; }
+.city-picker-more { display: block; width: 100%; margin-top: 7px; min-height: 34px; }
+.city-picker-nearby-note { margin: 11px 2px 1px; }
+.city-picker-option:focus-visible, .city-picker-state-label select:focus-visible, .city-picker-close:focus-visible, .city-picker-more:focus-visible, .city-picker-list-heading button:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+@media (max-width: 560px) { .city-picker-popover { padding: 12px; border-radius: 14px; }.city-picker-results { grid-template-columns: minmax(0, 1fr); max-height: min(38vh, 260px); }.city-picker-list-heading { align-items: flex-start; }.city-picker-list-heading button { flex: 0 0 auto; } }

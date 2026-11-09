@@ -2,7 +2,16 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createConnection, type Connection } from "mysql2/promise";
 import { acceptCollectiveInvite, createCollectiveInvite, previewCollectiveInvite } from "./db";
 
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+const databaseIdentity = (value: string) => {
+  const url = new URL(value);
+  return `${url.hostname}:${url.port || "3306"}${url.pathname}`;
+};
+if (testDatabaseUrl && process.env.DATABASE_URL && databaseIdentity(testDatabaseUrl) === databaseIdentity(process.env.DATABASE_URL)) {
+  throw new Error("TEST_DATABASE_URL precisa apontar para um banco isolado, diferente do banco gerenciado da aplicação.");
+}
+if (testDatabaseUrl) process.env.DATABASE_URL = testDatabaseUrl;
+const hasDatabase = Boolean(testDatabaseUrl);
 describe.skipIf(!hasDatabase)("collective invites — MySQL integration", () => {
   let connection: Connection;
   let ownerId: number;
@@ -11,7 +20,7 @@ describe.skipIf(!hasDatabase)("collective invites — MySQL integration", () => 
   let artistId: number;
 
   beforeAll(async () => {
-    connection = await createConnection(process.env.DATABASE_URL!);
+    connection = await createConnection(testDatabaseUrl!);
     await connection.query("SELECT 1 FROM collectiveInvites LIMIT 1");
     const suffix = `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
     const [owner] = await connection.execute<any>("INSERT INTO users (openId, name, email, accountType) VALUES (?, ?, ?, 'artist')", [`invite_it_owner_${suffix}`, "Integration Owner", `owner_${suffix}@example.test`]);

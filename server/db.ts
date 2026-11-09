@@ -152,15 +152,74 @@ export async function getArtistCatalog(ownerId: number) {
 export async function getTrackDetail(trackId: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select({ id: tracks.id, title: tracks.title, artistId: tracks.artistId, artist: artists.name, handle: artists.handle, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, sourceType: tracks.sourceType, externalUrl: tracks.externalUrl, description: tracks.description, releaseType: tracks.releaseType, releaseDate: tracks.releaseDate, visibility: tracks.visibility, creditsNote: tracks.creditsNote, bookletPages: tracks.bookletPages }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.id, trackId), eq(tracks.moderationStatus, "published"), eq(tracks.visibility, "public"), or(isNull(tracks.releaseDate), lte(tracks.releaseDate, new Date())))).limit(1);
+  const result = await db.select({ id: tracks.id, title: tracks.title, album: tracks.album, artistId: tracks.artistId, artist: artists.name, handle: artists.handle, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, sourceType: tracks.sourceType, externalUrl: tracks.externalUrl, description: tracks.description, releaseType: tracks.releaseType, releaseDate: tracks.releaseDate, visibility: tracks.visibility, creditsNote: tracks.creditsNote, bookletPages: tracks.bookletPages }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.id, trackId), eq(tracks.moderationStatus, "published"), eq(tracks.visibility, "public"), or(isNull(tracks.releaseDate), lte(tracks.releaseDate, new Date())))).limit(1);
   return result[0] ?? null;
 }
 
 export async function getEventDetail(eventId: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select({ id: events.id, title: events.name, place: events.venue, city: events.city, eventDate: events.eventDate, description: events.description, ticketUrl: events.ticketUrl, artistId: events.artistId, artist: artists.name, handle: artists.handle }).from(events).innerJoin(artists, eq(events.artistId, artists.id)).where(eq(events.id, eventId)).limit(1);
+  const result = await db.select({ id: events.id, title: events.name, place: events.venue, city: events.city, eventDate: events.eventDate, description: events.description, ticketUrl: events.ticketUrl, artistId: events.artistId, artist: artists.name, handle: artists.handle, eventType: events.eventType, admissionType: events.admissionType, accessibility: events.accessibility, safeSpace: events.safeSpace, ageRating: events.ageRating, program: events.program, canceledAt: events.canceledAt, cancelReason: events.cancelReason }).from(events).innerJoin(artists, eq(events.artistId, artists.id)).where(eq(events.id, eventId)).limit(1);
   return result[0] ?? null;
+}
+
+export async function getArtistPublicDetail(handle: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const normalizedHandle = handle.startsWith("@") ? handle : `@${handle}`;
+  const rows = await db.select().from(artists).where(eq(artists.handle, normalizedHandle)).limit(1);
+  const artist = rows[0];
+  if (!artist) return null;
+
+  const [followerRows, artistTracks, artistEvents] = await Promise.all([
+    db.select({ total: count(follows.artistId) }).from(follows).where(eq(follows.artistId, artist.id)),
+    db.select({ id: tracks.id, title: tracks.title, album: tracks.album, artistId: tracks.artistId, artist: artists.name, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, sourceType: tracks.sourceType, externalUrl: tracks.externalUrl, description: tracks.description, releaseType: tracks.releaseType, releaseDate: tracks.releaseDate, creditsNote: tracks.creditsNote, bookletPages: tracks.bookletPages }).from(tracks).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(tracks.artistId, artist.id), eq(tracks.visibility, "public"), eq(tracks.moderationStatus, "published"), or(isNull(tracks.releaseDate), lte(tracks.releaseDate, new Date())))).orderBy(desc(tracks.createdAt)).limit(100),
+    db.select({ id: events.id, title: events.name, place: events.venue, city: events.city, eventDate: events.eventDate, description: events.description, ticketUrl: events.ticketUrl, artistId: events.artistId, eventType: events.eventType, admissionType: events.admissionType, accessibility: events.accessibility, safeSpace: events.safeSpace, ageRating: events.ageRating, program: events.program, interest: count(eventInterests.eventId) }).from(events).leftJoin(eventInterests, eq(eventInterests.eventId, events.id)).where(and(eq(events.artistId, artist.id), gte(events.eventDate, new Date()), isNull(events.canceledAt))).groupBy(events.id).orderBy(asc(events.eventDate)).limit(50),
+  ]);
+
+  return {
+    artist: {
+      id: artist.id,
+      name: artist.name,
+      handle: artist.handle,
+      profileType: artist.profileType,
+      genre: artist.genre ?? "Cena local",
+      bio: artist.bio ?? "",
+      manifesto: artist.manifesto ?? undefined,
+      city: artist.city,
+      image: artist.avatarUrl ?? artist.coverUrl ?? "",
+      accent: "#c8f36a",
+      followers: Number(followerRows[0]?.total ?? 0).toLocaleString("pt-BR"),
+      instagramUrl: artist.instagramUrl ?? undefined,
+      bandcampUrl: artist.bandcampUrl ?? undefined,
+      supportUrl: artist.supportUrl ?? undefined,
+      pixUrl: artist.pixUrl ?? undefined,
+      merchUrl: artist.merchUrl ?? undefined,
+    },
+    tracks: artistTracks,
+    events: artistEvents.map(event => ({ ...event, interest: Number(event.interest ?? 0) })),
+  };
+}
+
+export async function getPlaylistDetail(playlistId: number, viewerId?: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({ id: playlists.id, ownerId: playlists.ownerId, ownerName: users.name, name: playlists.name, collaborative: playlists.collaborative }).from(playlists).leftJoin(users, eq(playlists.ownerId, users.id)).where(eq(playlists.id, playlistId)).limit(1);
+  const playlist = rows[0];
+  if (!playlist || (!playlist.collaborative && playlist.ownerId !== viewerId)) return null;
+
+  const playlistTracksResult = await db.select({ id: tracks.id, title: tracks.title, album: tracks.album, artistId: tracks.artistId, artist: artists.name, genre: tracks.genre, city: tracks.city, duration: tracks.durationSeconds, cover: tracks.coverUrl, audioUrl: tracks.audioUrl, sourceType: tracks.sourceType, externalUrl: tracks.externalUrl, releaseType: tracks.releaseType, creditsNote: tracks.creditsNote, bookletPages: tracks.bookletPages }).from(playlistTracks).innerJoin(tracks, eq(playlistTracks.trackId, tracks.id)).innerJoin(artists, eq(tracks.artistId, artists.id)).where(and(eq(playlistTracks.playlistId, playlistId), eq(tracks.visibility, "public"), eq(tracks.moderationStatus, "published"), or(isNull(tracks.releaseDate), lte(tracks.releaseDate, new Date())))).orderBy(asc(playlistTracks.position), asc(playlistTracks.createdAt)).limit(100);
+
+  return {
+    playlist: {
+      id: playlist.id,
+      name: playlist.name,
+      collaborative: playlist.collaborative,
+      owner: playlist.ownerName || "Ouvinte da CENA",
+      description: playlist.collaborative ? "Uma playlist aberta à colaboração da comunidade." : "Playlist privada da sua biblioteca.",
+    },
+    tracks: playlistTracksResult,
+  };
 }
 
 function citySearchPattern(city: string) {
