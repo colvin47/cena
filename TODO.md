@@ -67,4 +67,15 @@
 - [x] O perfil de ouvinte deve exibir cidade, bio, gêneros, artistas seguidos, faixas salvas, playlists, eventos de interesse e edição do perfil.
 - [x] O catálogo próprio do artista deve ser consultado sem depender da cidade ou gênero selecionados na Home.
 - [x] Depois do upload, o fluxo deve atualizar o catálogo próprio e levar o artista ao perfil, onde a faixa publicada pode ser tocada diretamente.
-- [ ] Publicar esta versão no projeto Webdev correspondente ao domínio `cena-s494x52h.manus.space`; a cópia atual ainda está separada do projeto Webdev inicialmente conectado.
+- [ ] Publicar a versão integrada no projeto do site público informado pelo usuário (`https://cenaapp-rgtrg8wt.manus.space`); o vínculo Webdev está indisponível para a identidade atual da sessão e requer acesso autorizado.
+
+
+## Ciclo 7 — app Android principal e site complementar
+- [x] “A ideia é transformar o projeto; o ideal é criar um app e o site ser um auxiliar do app, assim como o Spotify.” O plano e a documentação passam a tratar o app Android como experiência principal e o site responsivo como complemento público e de gestão artística.
+- [x] O app Expo permanece em `mobile/`, consulta a API CENA existente e não cria outro banco, sistema de contas, uploads ou compras.
+- [x] Eventos aceitam endereço e coordenadas opcionais; organizadores capturam a localização deliberadamente, e o app/site oferecem acesso ao mapa quando o ponto existe.
+- [x] O estúdio do site cadastra produtos e lotes de ingresso; app e site exibem preço/estoque e destinos externos sem checkout/reserva dentro da CENA.
+- [x] `mobile/eas.json` define perfil remoto `preview` para APK instalável e `production` para AAB; checks TypeScript, testes do site e builds web passaram nesta cópia.
+- [ ] Aplicar a migration `drizzle/0015_cena_mobile_commerce_analytics.sql` no banco do ambiente Webdev após revisão operacional. Ela foi gerada localmente, não executada neste trabalho.
+- [ ] Publicar o backend/site atualizado no domínio informado pelo usuário; o projeto Webdev correspondente não pôde ser vinculado à identidade atual da sessão.
+- [ ] Vincular o app a uma conta/projeto Expo/EAS autorizado, executar no Dashboard o perfil `preview` Android e entregar o APK resultante. Nenhum APK/AAB foi gerado nesta cópia.
