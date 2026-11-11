@@ -38,7 +38,7 @@ export default function TrackDetailScreen() {
 
   return (
     <Screen>
-      <Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button"><Text style={styles.backText}>‹  Voltar</Text></Pressable>
+      <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/" as never)} style={styles.back} accessibilityRole="button"><Text style={styles.backText}>‹  Voltar</Text></Pressable>
       {loading && <View style={styles.loading}><ActivityIndicator color={theme.lime} /><Text style={styles.body}>Carregando faixa…</Text></View>}
       {!loading && error && <View style={styles.panel}><Text style={styles.title}>Não foi possível abrir</Text><Text style={styles.body}>{error}</Text></View>}
       {!loading && !error && !track && <View style={styles.panel}><Text style={styles.title}>Faixa não encontrada</Text><Text style={styles.body}>Este link pode ter sido removido, ocultado ou não ser mais público. Nenhuma demo foi usada como substituta.</Text></View>}

@@ -14,6 +14,7 @@ function money(value: string | number) {
 }
 
 export function ArtistCommercePanel({ events }: { events: CommerceEvent[] }) {
+  const utils = trpc.useUtils();
   const [item, setItem] = useState({ name: "", description: "", price: "", stock: "", externalUrl: "", imageUrl: "" });
   const [ticket, setTicket] = useState({ eventId: "", name: "", price: "", quantityAvailable: "", pixKey: "" });
   const items = trpc.scene.myMerchandise.useQuery(undefined, { staleTime: 15_000 });
@@ -27,6 +28,7 @@ export function ArtistCommercePanel({ events }: { events: CommerceEvent[] }) {
   });
   const createTicket = trpc.scene.createEventTicket.useMutation({
     onSuccess: async () => {
+      await utils.scene.eventTickets.invalidate();
       setTicket({ eventId: "", name: "", price: "", quantityAvailable: "", pixKey: "" });
       toast.success("Lote criado. O ingresso ainda é vendido fora da CENA.");
     },
@@ -69,6 +71,6 @@ export function ArtistCommercePanel({ events }: { events: CommerceEvent[] }) {
         {!activeEvents.length && <small>Crie um evento na agenda antes de cadastrar um lote.</small>}
       </form>
     </div>
-    <div className="content-section"><h3>Produtos cadastrados</h3>{items.isLoading ? <p>Carregando catálogo…</p> : items.data?.length ? <div className="activity-list">{items.data.map(product => <div className="activity-item" key={product.id}><div><strong>{product.name}</strong><span>{money(product.price)} · {product.stock} em estoque{product.isAvailable ? " · disponível" : " · indisponível"}</span></div>{product.externalUrl && <a className="text-button" href={product.externalUrl} target="_blank" rel="noreferrer">Abrir link</a>}</div>)}</div> : <p>A vitrine ainda está vazia.</p>}</div>
+    <div className="content-section"><h3>Produtos cadastrados</h3>{items.isLoading ? <p role="status">Carregando catálogo…</p> : items.error ? <div className="empty-card" role="alert"><strong>Não foi possível carregar os produtos.</strong><span>O catálogo pode estar temporariamente indisponível.</span><button className="text-button" type="button" onClick={() => void items.refetch()}>Tentar novamente</button></div> : items.data?.length ? <div className="activity-list">{items.data.map(product => <div className="activity-item" key={product.id}><div><strong>{product.name}</strong><span>{money(product.price)} · {product.stock} em estoque{product.isAvailable ? " · disponível" : " · indisponível"}</span></div>{product.externalUrl && <a className="text-button" href={product.externalUrl} target="_blank" rel="noreferrer">Abrir link</a>}</div>)}</div> : <p role="status">A vitrine ainda está vazia.</p>}</div>
   </section>;
 }

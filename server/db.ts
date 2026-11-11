@@ -346,13 +346,30 @@ export async function listArtistEvents(ownerId: number) {
   return db.select().from(events).where(eq(events.artistId, artist.id)).orderBy(asc(events.eventDate)).limit(50);
 }
 
-export async function updateArtistEvent(ownerId: number, eventId: number, input: { name: string; venue: string; city: string; address?: string; latitude?: number; longitude?: number; eventDate: Date; description?: string; ticketUrl?: string; eventType?: "show" | "battle" | "cypher" | "cultural_round" | "diy_festival" | "occupation" | "zine_fair" | "workshop" | "listening_party" | "release"; admissionType?: "ticket" | "free" | "contribution"; accessibility?: string; safeSpace?: boolean; ageRating?: string; program?: string }) {
+export async function updateArtistEvent(ownerId: number, eventId: number, input: { name: string; venue: string; city: string; address?: string | null; latitude?: number | null; longitude?: number | null; eventDate: Date; description?: string; ticketUrl?: string; eventType?: "show" | "battle" | "cypher" | "cultural_round" | "diy_festival" | "occupation" | "zine_fair" | "workshop" | "listening_party" | "release"; admissionType?: "ticket" | "free" | "contribution"; accessibility?: string; safeSpace?: boolean; ageRating?: string; program?: string }) {
   const db = await getDb();
   if (!db) return null;
   const artist = await getArtistByOwnerId(ownerId);
   if (!artist) return null;
   const { name, venue, city, address, latitude, longitude, eventDate, eventType, admissionType, description, ticketUrl, accessibility, safeSpace, ageRating, program } = input;
-  await db.update(events).set({ name, venue, city, address: address || null, latitude: latitude == null ? null : String(latitude), longitude: longitude == null ? null : String(longitude), eventDate, eventType, admissionType, description: description || null, ticketUrl: ticketUrl || null, accessibility: accessibility || null, safeSpace, ageRating: ageRating || null, program: program || null, updatedAt: new Date() }).where(and(eq(events.id, eventId), eq(events.artistId, artist.id)));
+  await db.update(events).set({
+    name,
+    venue,
+    city,
+    ...(address !== undefined ? { address: address || null } : {}),
+    ...(latitude !== undefined ? { latitude: latitude === null ? null : String(latitude) } : {}),
+    ...(longitude !== undefined ? { longitude: longitude === null ? null : String(longitude) } : {}),
+    eventDate,
+    eventType,
+    admissionType,
+    description: description || null,
+    ticketUrl: ticketUrl || null,
+    accessibility: accessibility || null,
+    safeSpace,
+    ageRating: ageRating || null,
+    program: program || null,
+    updatedAt: new Date(),
+  }).where(and(eq(events.id, eventId), eq(events.artistId, artist.id)));
   const result = await db.select().from(events).where(and(eq(events.id, eventId), eq(events.artistId, artist.id))).limit(1);
   return result[0] ?? null;
 }
@@ -578,13 +595,39 @@ export async function toggleEventInterest(userId: number, eventId: number) {
   return true;
 }
 
+export type TrackPlayEligibility = {
+  visibility: string;
+  moderationStatus: string;
+  removedAt: Date | null;
+  releaseDate: Date | null;
+};
+
+export function isTrackEligibleForPlay(track: TrackPlayEligibility, now = new Date()) {
+  return track.visibility === "public"
+    && track.moderationStatus === "published"
+    && track.removedAt === null
+    && (track.releaseDate === null || track.releaseDate.getTime() <= now.getTime());
+}
+
 export async function recordTrackPlay(trackId: number, userId?: number) {
   return recordTrackListen(trackId, userId, 0);
 }
 export async function recordTrackListen(trackId: number, userId: number | undefined, listenedSeconds: number, city?: string) {
   const db = await getDb();
   if (!db) return false;
-  await db.insert(trackPlays).values({ trackId, userId: userId ?? null, listenedSeconds: Math.max(0, Math.min(86400, Math.floor(listenedSeconds))), city: city?.trim().slice(0, 120) || null });
+  const now = new Date();
+  const eligibleTrack = await db.select({ durationSeconds: tracks.durationSeconds, visibility: tracks.visibility, moderationStatus: tracks.moderationStatus, removedAt: tracks.removedAt, releaseDate: tracks.releaseDate }).from(tracks).where(and(
+    eq(tracks.id, trackId),
+    eq(tracks.visibility, "public"),
+    eq(tracks.moderationStatus, "published"),
+    isNull(tracks.removedAt),
+    or(isNull(tracks.releaseDate), lte(tracks.releaseDate, now)),
+  )).limit(1);
+  if (!eligibleTrack[0] || !isTrackEligibleForPlay(eligibleTrack[0], now)) return false;
+  const maxListenSeconds = eligibleTrack[0].durationSeconds == null
+    ? 86400
+    : Math.max(0, Math.min(86400, eligibleTrack[0].durationSeconds));
+  await db.insert(trackPlays).values({ trackId, userId: userId ?? null, listenedSeconds: Math.max(0, Math.min(maxListenSeconds, Math.floor(listenedSeconds))), city: city?.trim().slice(0, 120) || null });
   return true;
 }
 

@@ -78,4 +78,12 @@
 - [x] `mobile/eas.json` define perfil remoto `preview` para APK instalável e `production` para AAB; checks TypeScript, testes do site e builds web passaram nesta cópia.
 - [ ] Aplicar a migration `drizzle/0015_cena_mobile_commerce_analytics.sql` no banco do ambiente Webdev após revisão operacional. Ela foi gerada localmente, não executada neste trabalho.
 - [ ] Publicar o backend/site atualizado no domínio informado pelo usuário; o projeto Webdev correspondente não pôde ser vinculado à identidade atual da sessão.
-- [ ] Vincular o app a uma conta/projeto Expo/EAS autorizado, executar no Dashboard o perfil `preview` Android e entregar o APK resultante. Nenhum APK/AAB foi gerado nesta cópia.
+- [x] Vincular o app a uma conta/projeto Expo/EAS autorizado e concluir um build Android `preview`; gerar outro APK após as correções do ciclo 8 para incluir a versão atualizada.
+
+## Ciclo 8 — correções funcionais e QA offline
+- [x] O player web permanece visível ao pausar e provedores de página não são tratados como streams diretos; eventos têm conversão local de horário, navegação ao detalhe, consentimento explícito para geolocalização e estados distintos de carregamento/erro/vazio.
+- [x] O backend preserva campos de localização omitidos em PATCH, permite removê-los explicitamente em par, valida faixa/centavos e só conta plays elegíveis (públicos, publicados, não removidos e liberados).
+- [x] O app Expo rejeita origem HTTP remota, só encaminha áudio direto validado ao player, evita perder favoritos durante hidratação e retorna ao início em deep links sem histórico.
+- [x] `scripts/qa-offline.sh` valida site/backend/app sem acessar APIs ou banco publicados; 36 testes web/backend e 7 testes mobile passaram nesta cópia.
+- [ ] Gerar e entregar um APK `preview` novo com estas correções.
+- [ ] Publicar backend/site e aplicar a migration após vincular o projeto Webdev correto e validar o histórico/schema real do banco; nenhum dado ou serviço publicado foi alterado nesta rodada.

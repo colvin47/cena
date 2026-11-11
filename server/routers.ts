@@ -21,6 +21,14 @@ const discoveryInput = z.object({
 const publicHttpsUrl = z.string().trim().url().max(2048).refine(value => {
   try { return new URL(value).protocol === "https:"; } catch { return false; }
 }, "Use um endereço HTTPS.");
+const currencyPrice = z.number().min(0).max(999999.99).refine(amount => {
+  const cents = amount * 100;
+  return Math.abs(cents - Math.round(cents)) <= Number.EPSILON * Math.max(1, Math.abs(cents)) * 4;
+}, "O preço deve ter no máximo duas casas decimais.");
+const hasCoordinatePair = (coordinates: { latitude?: number | null; longitude?: number | null }) =>
+  (coordinates.latitude === undefined && coordinates.longitude === undefined)
+  || (coordinates.latitude === null && coordinates.longitude === null)
+  || (typeof coordinates.latitude === "number" && typeof coordinates.longitude === "number");
 
 function foldSearch(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -184,14 +192,14 @@ export const appRouter = router({
     }),
     recordPlay: publicProcedure.input(z.object({ trackId: z.number().int().positive(), listenedSeconds: z.number().int().min(0).max(86400).default(0), city: z.string().trim().max(120).optional() })).mutation(async ({ ctx, input }) => ({ recorded: await recordTrackListen(input.trackId, ctx.user?.id, input.listenedSeconds, input.city) })),
     myMerchandise: protectedProcedure.query(({ ctx }) => listArtistMerchandise(ctx.user.id)),
-    createMerchandise: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(160), description: z.string().trim().max(1000).optional(), price: z.number().min(0).max(999999.99), stock: z.number().int().min(0).max(100000), imageUrl: publicHttpsUrl.optional(), externalUrl: publicHttpsUrl.optional() })).mutation(async ({ ctx, input }) => {
+    createMerchandise: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(160), description: z.string().trim().max(1000).optional(), price: currencyPrice, stock: z.number().int().min(0).max(100000), imageUrl: publicHttpsUrl.optional(), externalUrl: publicHttpsUrl.optional() })).mutation(async ({ ctx, input }) => {
       if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem cadastrar produtos." });
       const id = await createArtistMerchandise(ctx.user.id, input);
       if (!id) throw new TRPCError({ code: "BAD_REQUEST", message: "Crie seu perfil de artista antes de cadastrar produtos." });
       await writeAuditLog({ actorId: ctx.user.id, action: "merchandise.created", targetType: "merchandise", targetId: id, metadata: { name: input.name } });
       return { id, persisted: true };
     }),
-    createEventTicket: protectedProcedure.input(z.object({ eventId: z.number().int().positive(), name: z.string().trim().min(2).max(100), price: z.number().min(0).max(999999.99), quantityAvailable: z.number().int().min(0).max(100000), pixKey: z.string().trim().max(255).optional() })).mutation(async ({ ctx, input }) => {
+    createEventTicket: protectedProcedure.input(z.object({ eventId: z.number().int().positive(), name: z.string().trim().min(2).max(100), price: currencyPrice, quantityAvailable: z.number().int().min(0).max(100000), pixKey: z.string().trim().max(255).optional() })).mutation(async ({ ctx, input }) => {
       if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem cadastrar lotes de ingresso." });
       const id = await createArtistEventTicket(ctx.user.id, input);
       if (!id) throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado no seu perfil." });
@@ -231,7 +239,7 @@ export const appRouter = router({
       return result;
     }),
 
-    updateEvent: protectedProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(1).max(180), venue: z.string().trim().min(1).max(180), city: z.string().trim().min(1).max(120), address: z.string().trim().max(255).optional(), latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(), eventDate: z.string().datetime(), eventType: z.enum(["show", "battle", "cypher", "cultural_round", "diy_festival", "occupation", "zine_fair", "workshop", "listening_party", "release"]).default("show"), admissionType: z.enum(["ticket", "free", "contribution"]).default("ticket"), description: z.string().max(500).optional(), program: z.string().max(1000).optional(), accessibility: z.string().max(500).optional(), safeSpace: z.boolean().default(false), ageRating: z.string().max(40).optional(), ticketUrl: publicHttpsUrl.optional() })).mutation(async ({ ctx, input }) => {
+    updateEvent: protectedProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(1).max(180), venue: z.string().trim().min(1).max(180), city: z.string().trim().min(1).max(120), address: z.string().trim().max(255).nullable().optional(), latitude: z.number().min(-90).max(90).nullable().optional(), longitude: z.number().min(-180).max(180).nullable().optional(), eventDate: z.string().datetime(), eventType: z.enum(["show", "battle", "cypher", "cultural_round", "diy_festival", "occupation", "zine_fair", "workshop", "listening_party", "release"]).default("show"), admissionType: z.enum(["ticket", "free", "contribution"]).default("ticket"), description: z.string().max(500).optional(), program: z.string().max(1000).optional(), accessibility: z.string().max(500).optional(), safeSpace: z.boolean().default(false), ageRating: z.string().max(40).optional(), ticketUrl: publicHttpsUrl.optional() }).refine(hasCoordinatePair, { message: "Informe latitude e longitude juntas.", path: ["longitude"] })).mutation(async ({ ctx, input }) => {
       if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem editar eventos." });
       const event = await updateArtistEvent(ctx.user.id, input.id, { ...input, eventDate: new Date(input.eventDate) });
       if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
@@ -249,7 +257,7 @@ export const appRouter = router({
       if (!deleted) throw new TRPCError({ code: "NOT_FOUND", message: "Evento não encontrado." });
       return { deleted: true };
     }),
-    createEvent: protectedProcedure.input(z.object({ name: z.string().trim().min(1).max(180), venue: z.string().trim().min(1).max(180), city: z.string().trim().min(1).max(120), address: z.string().trim().max(255).optional(), latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(), eventDate: z.string().datetime(), collectiveId: z.number().int().positive().optional(), eventType: z.enum(["show", "battle", "cypher", "cultural_round", "diy_festival", "occupation", "zine_fair", "workshop", "listening_party", "release"]).default("show"), admissionType: z.enum(["ticket", "free", "contribution"]).default("ticket"), description: z.string().max(500).optional(), program: z.string().max(1000).optional(), accessibility: z.string().max(500).optional(), safeSpace: z.boolean().default(false), ageRating: z.string().max(40).optional(), ticketUrl: publicHttpsUrl.optional() })).mutation(async ({ ctx, input }) => {
+    createEvent: protectedProcedure.input(z.object({ name: z.string().trim().min(1).max(180), venue: z.string().trim().min(1).max(180), city: z.string().trim().min(1).max(120), address: z.string().trim().max(255).optional(), latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(), eventDate: z.string().datetime(), collectiveId: z.number().int().positive().optional(), eventType: z.enum(["show", "battle", "cypher", "cultural_round", "diy_festival", "occupation", "zine_fair", "workshop", "listening_party", "release"]).default("show"), admissionType: z.enum(["ticket", "free", "contribution"]).default("ticket"), description: z.string().max(500).optional(), program: z.string().max(1000).optional(), accessibility: z.string().max(500).optional(), safeSpace: z.boolean().default(false), ageRating: z.string().max(40).optional(), ticketUrl: publicHttpsUrl.optional() }).refine(hasCoordinatePair, { message: "Informe latitude e longitude juntas.", path: ["longitude"] })).mutation(async ({ ctx, input }) => {
       if (ctx.user.accountType !== "artist" && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas artistas podem criar eventos." });
       if (input.collectiveId) {
         const permission = await getCollectivePermission(ctx.user.id, input.collectiveId);

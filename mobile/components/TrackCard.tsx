@@ -1,6 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { absoluteMediaUrl } from "@/lib/cena-api";
+import { openExternalUrl, safeExternalUrl } from "@/lib/external-links";
 import { useCenaAudio } from "@/hooks/CenaAudio";
 import { useLocalLibrary } from "@/hooks/LocalLibrary";
 import { theme } from "@/components/theme";
@@ -20,6 +21,7 @@ export function TrackCard({ track, queue, isDemo = false }: { track: Track; queu
   const demo = isDemo || Boolean(track._demo);
   const isCurrent = audio.currentTrack?.id === track.id && audio.currentTrack.artistId === track.artistId && Boolean(audio.currentTrack._demo) === Boolean(track._demo);
   const saved = library.isSaved(track);
+  const sourceUrl = safeExternalUrl(track.externalUrl);
 
   return (
     <View style={[styles.card, isCurrent && styles.cardActive]}>
@@ -32,7 +34,8 @@ export function TrackCard({ track, queue, isDemo = false }: { track: Track; queu
         <Pressable disabled={!track.handle || demo} onPress={() => track.handle && router.push(`/artist/${encodeURIComponent(track.handle.replace(/^@/, ""))}` as never)} accessibilityRole={track.handle && !demo ? "link" : undefined}><Text numberOfLines={1} style={styles.artist}>{track.artist} · {track.genre || "Música independente"}</Text></Pressable>
         <View style={styles.meta}><Text style={styles.metaText}>{track.city || "CENA"}</Text>{formatDuration(track.duration) ? <Text style={styles.metaText}>{formatDuration(track.duration)}</Text> : null}{demo && <Text style={styles.demo}>AMOSTRA</Text>}</View>
       </View>
-      <Pressable onPress={() => library.toggleSaved(track)} style={styles.saveButton} accessibilityRole="button" accessibilityLabel={saved ? "Remover da biblioteca local" : "Salvar neste aparelho"}><Text style={[styles.saveGlyph, saved && styles.activeText]}>{saved ? "◆" : "◇"}</Text></Pressable>
+      {sourceUrl && <Pressable onPress={() => { void openExternalUrl(sourceUrl); }} style={styles.sourceButton} accessibilityRole="link" accessibilityLabel={`Abrir fonte externa de ${track.title}`}><Text style={styles.sourceGlyph}>↗</Text></Pressable>}
+      <Pressable disabled={!library.ready} onPress={() => library.toggleSaved(track)} style={[styles.saveButton, !library.ready && styles.saveDisabled]} accessibilityRole="button" accessibilityState={{ disabled: !library.ready }} accessibilityLabel={!library.ready ? "Carregando biblioteca" : saved ? "Remover da biblioteca local" : "Salvar neste aparelho"}><Text style={[styles.saveGlyph, saved && styles.activeText]}>{saved ? "◆" : "◇"}</Text></Pressable>
     </View>
   );
 }
@@ -54,5 +57,8 @@ const styles = StyleSheet.create({
   metaText: { color: theme.muted, fontSize: 10 },
   demo: { color: theme.peach, fontSize: 8, fontWeight: "900", letterSpacing: 0.8 },
   saveButton: { minWidth: 38, minHeight: 42, alignItems: "center", justifyContent: "center" },
+  saveDisabled: { opacity: 0.45 },
+  sourceButton: { minWidth: 32, minHeight: 42, alignItems: "center", justifyContent: "center" },
+  sourceGlyph: { color: theme.lavender, fontSize: 19, fontWeight: "900" },
   saveGlyph: { color: theme.muted, fontSize: 21, fontWeight: "700" },
 });

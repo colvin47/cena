@@ -132,7 +132,7 @@ export const tracks = mysqlTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
-  table => ({ artistIdx: index("idx_tracks_artist").on(table.artistId), cityGenreIdx: index("idx_tracks_city_genre").on(table.city, table.genre), formatIdx: index("idx_tracks_release_type").on(table.releaseType), createdAtIdx: index("idx_tracks_created_at").on(table.createdAt) }),
+  table => ({ artistIdx: index("idx_tracks_artist").on(table.artistId), cityGenreIdx: index("idx_tracks_city_genre").on(table.city, table.genre), formatIdx: index("idx_tracks_release_type").on(table.releaseType), createdAtIdx: index("idx_tracks_created_at").on(table.createdAt), collectiveIdx: index("idx_tracks_collective").on(table.collectiveId) }),
 );
 
 export const trackCredits = mysqlTable(
@@ -173,7 +173,7 @@ export const events = mysqlTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
-  table => ({ cityDateIdx: index("idx_events_city_date").on(table.city, table.eventDate), typeIdx: index("idx_events_type").on(table.eventType), artistIdx: index("idx_events_artist").on(table.artistId) }),
+  table => ({ cityDateIdx: index("idx_events_city_date").on(table.city, table.eventDate), typeIdx: index("idx_events_type").on(table.eventType), artistIdx: index("idx_events_artist").on(table.artistId), collectiveIdx: index("idx_events_collective").on(table.collectiveId) }),
 );
 
 export const eventTickets = mysqlTable(

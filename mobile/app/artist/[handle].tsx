@@ -69,7 +69,7 @@ export default function ArtistDetailScreen() {
 
   return (
     <Screen>
-      <Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button"><Text style={styles.backText}>‹  Voltar</Text></Pressable>
+      <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/" as never)} style={styles.back} accessibilityRole="button"><Text style={styles.backText}>‹  Voltar</Text></Pressable>
       {loading && <View style={styles.loading}><ActivityIndicator color={theme.lime} /><Text style={styles.body}>Carregando perfil…</Text></View>}
       {!loading && error && <View style={styles.error}><Text style={styles.title}>Não foi possível abrir</Text><Text style={styles.body}>{error}</Text></View>}
       {!loading && !error && !detail && <View style={styles.error}><Text style={styles.title}>Perfil não encontrado</Text><Text style={styles.body}>Este perfil pode ter sido ocultado, removido ou estar indisponível.</Text></View>}

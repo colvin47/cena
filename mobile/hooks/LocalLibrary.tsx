@@ -53,10 +53,11 @@ export function LocalLibraryProvider({ children }: { children: ReactNode }) {
 
   const isSaved = useCallback((track: Track) => tracks.some(item => sameTrack(item, track)), [tracks]);
   const toggleSaved = useCallback((track: Track) => {
+    if (!ready) return;
     setTracks(current => current.some(item => sameTrack(item, track))
       ? current.filter(item => !sameTrack(item, track))
       : [track, ...current]);
-  }, []);
+  }, [ready]);
 
   const value = useMemo(() => ({ tracks, ready, isSaved, toggleSaved }), [isSaved, ready, tracks, toggleSaved]);
   return <LocalLibraryContext.Provider value={value}>{children}</LocalLibraryContext.Provider>;

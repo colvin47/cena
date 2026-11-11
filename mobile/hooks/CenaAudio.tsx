@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { absoluteMediaUrl } from "@/lib/cena-api";
+import { absoluteMediaUrl, CENA_API_BASE_URL } from "@/lib/cena-api";
+import { directAudioUrl } from "@/lib/media-urls";
 import type { Track } from "@/lib/types";
 
 type CenaAudioValue = {
@@ -48,9 +49,9 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadTrack = useCallback((track: Track) => {
-    const url = absoluteMediaUrl(track.audioUrl || track.externalUrl);
-    if (!url || !/^https?:\/\//i.test(url)) {
-      setError("Esta faixa não possui um endereço de áudio disponível.");
+    const url = directAudioUrl(track.audioUrl, CENA_API_BASE_URL, typeof __DEV__ !== "undefined" && __DEV__);
+    if (!url) {
+      setError("Não há um arquivo de áudio direto compatível. Use o link da fonte externa, se disponível.");
       return;
     }
     setError(null);

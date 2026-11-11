@@ -72,7 +72,7 @@ export default function EventDetailScreen() {
 
   return (
     <Screen>
-      <Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button"><Text style={styles.backText}>‹  Voltar</Text></Pressable>
+      <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace("/" as never)} style={styles.back} accessibilityRole="button"><Text style={styles.backText}>‹  Voltar</Text></Pressable>
       {loading && <View style={styles.loading}><ActivityIndicator color={theme.lime} /><Text style={styles.body}>Carregando evento…</Text></View>}
       {!loading && error && <View style={styles.error}><Text style={styles.title}>Não foi possível abrir</Text><Text style={styles.body}>{error}</Text></View>}
       {!loading && !error && !event && <View style={styles.empty}><Text style={styles.title}>Evento não encontrado</Text><Text style={styles.body}>O evento pode ter sido removido, ocultado ou não estar mais disponível.</Text></View>}
