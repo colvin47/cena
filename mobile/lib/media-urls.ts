@@ -1,7 +1,6 @@
-const DEFAULT_API_BASE_URL = "https://cenaapp-rgtrg8wt.manus.space";
+const DEFAULT_API_BASE_URL = "https://cena-kn4vk68m.manus.space";
 const DIRECT_AUDIO_EXTENSIONS = new Set(["aac", "flac", "m4a", "mp3", "mp4", "wav"]);
 const AUDIO_PAGE_HOSTS = ["spotify.com", "youtube.com", "youtu.be", "bandcamp.com", "soundcloud.com"];
-
 function isLocalDevelopmentHost(hostname: string) {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
   if (host === "localhost" || host.endsWith(".localhost") || host === "::1") return true;

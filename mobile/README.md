@@ -20,7 +20,7 @@ corepack pnpm check
 corepack pnpm start
 ```
 
-O valor opcional `EXPO_PUBLIC_CENA_API_BASE_URL` define a origem HTTPS da API e, se omitido, usa `https://cenaapp-rgtrg8wt.manus.space`. Não coloque tokens ou segredos em variáveis `EXPO_PUBLIC_*`.
+O valor opcional `EXPO_PUBLIC_CENA_API_BASE_URL` define a origem HTTPS da API e, se omitido, usa `https://cena-kn4vk68m.manus.space`. Não coloque tokens ou segredos em variáveis `EXPO_PUBLIC_*`.
 
 ## APK e AAB
 

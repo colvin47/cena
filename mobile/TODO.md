@@ -7,3 +7,11 @@
 - [x] **Conta, biblioteca e privacidade de ouvinte.** Continuar o perfil de ouvinte privado. A biblioteca, conta e ações autenticadas só serão habilitadas após existir um OAuth nativo seguro no backend; não simular login, não expor JWT em deep link e não chamar mutations sem sessão validada.
 - [ ] **Perfil de artista e uploads reais.** Artista autenticado deve conseguir consultar/gerenciar perfil e enviar áudio/capa pelo endpoint validado do CENA; preservar validações de direitos, formato, duração, propriedade e moderação do servidor. Não enviar arquivo nem criar perfil real durante testes ou desenvolvimento deste pacote.
 - [ ] **Importação e entrega Android.** Incluir identidade nativa da CENA, instruções e fonte sem credenciais, dados de produção, uploads, `node_modules` ou build local. O perfil EAS preview para APK instalável está configurado; APK/AAB só será considerado entregue após vincular a fonte a um projeto Expo/EAS autorizado e concluir o build Android no Dashboard.
+
+## Atualização visual e de descoberta desta solicitação
+- [x] Aplicar no app a paleta aprovada preto `#08070A`, superfícies roxo-escuras `#15101B`/`#24142F`, vermelho CENA `#C52642` e realce `#F05A72`, preservando texto creme e lavanda.
+- [x] Manter a busca e a entrada livre de gênero montadas durante a digitação; aplicar debounce de 280 ms e conservar resultados anteriores enquanto a consulta atualiza.
+- [x] Expandir as sugestões de gêneros e aceitar um gênero escrito manualmente como filtro da descoberta, sem limitar o usuário aos chips.
+- [x] Atualizar a origem HTTPS padrão da API e o exemplo de configuração para `https://cena-kn4vk68m.manus.space`; o endpoint de saúde e o logo público desse domínio responderam HTTP 200.
+- [x] Executar `pnpm check` e exportar o bundle Android local com `expo export --platform android --no-bytecode`; essa exportação valida o bundle, mas **não** é um APK.
+- [ ] Gerar e entregar o APK com o perfil `preview` no projeto Expo alvo `@colvindiegos-team/cena-mobile`. A sessão atual mostra “Account not found” para esse projeto; não usar a conta/projeto Expo diferente `@colvindiegoss-team/cena`.

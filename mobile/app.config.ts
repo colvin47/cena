@@ -4,5 +4,5 @@ const expo = appJson.expo;
 
 export default {
   ...expo,
-  logoUrl: "https://cenaapp-rgtrg8wt.manus.space/cena-logo.png",
+  logoUrl: "https://cena-kn4vk68m.manus.space/cena-logo.png",
 };
