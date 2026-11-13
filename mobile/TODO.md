@@ -14,4 +14,4 @@
 - [x] Expandir as sugestões de gêneros e aceitar um gênero escrito manualmente como filtro da descoberta, sem limitar o usuário aos chips.
 - [x] Atualizar a origem HTTPS padrão da API e o exemplo de configuração para `https://cena-kn4vk68m.manus.space`; o endpoint de saúde e o logo público desse domínio responderam HTTP 200.
 - [x] Executar `pnpm check` e exportar o bundle Android local com `expo export --platform android --no-bytecode`; essa exportação valida o bundle, mas **não** é um APK.
-- [ ] Gerar e entregar o APK com o perfil `preview` no projeto Expo alvo `@colvindiegos-team/cena-mobile`. A sessão atual mostra “Account not found” para esse projeto; não usar a conta/projeto Expo diferente `@colvindiegoss-team/cena`.
+- [ ] **Gerar APK pelo painel Expo/GitHub.** Usar o projeto Expo acessível `@colvindiegoss-team/cena` (`projectId` `20f42d9f-0388-4563-8601-f6c579bbbafb`), ligado a `diego47colvin-debug/cena`; definir `Base directory` como `mobile`, usar o branch `feat/native-first-app-commerce` e selecionar Android + perfil `preview`. Só considerar entregue depois de o build concluir e de obter a ligação do APK.

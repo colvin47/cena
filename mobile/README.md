@@ -17,6 +17,7 @@ Requisitos: Node.js 22 e pnpm 10.18.0. Na pasta `mobile/`:
 ```bash
 corepack pnpm install --frozen-lockfile
 corepack pnpm check
+corepack pnpm test
 corepack pnpm start
 ```
 
@@ -24,7 +25,7 @@ O valor opcional `EXPO_PUBLIC_CENA_API_BASE_URL` define a origem HTTPS da API e,
 
 ## APK e AAB
 
-`eas.json` declara o perfil `preview` como distribuição interna Android em formato **APK** instalável e o perfil `production` como **AAB**. Depois de importar/vincular este diretório a um projeto Expo/EAS autorizado, selecione `preview` + `Android` no Dashboard para compilar o APK. A compilação Android nativa precisa ser executada pelo serviço de build remoto; nenhum APK/AAB está incluído neste repositório e não foi gerado neste ambiente.
+`eas.json` declara o perfil `preview` como distribuição interna Android em formato **APK** instalável e o perfil `production` como **AAB**. Este app usa o projeto Expo `@colvindiegoss-team/cena` (`projectId` `20f42d9f-0388-4563-8601-f6c579bbbafb`), ligado ao repositório `diego47colvin-debug/cena`; no painel Expo, defina o `Base directory` como `mobile` e escolha `Build from GitHub`, o branch `feat/native-first-app-commerce` e o perfil `preview` para Android. A compilação Android nativa deve ser executada pelo serviço remoto Expo; nenhum APK/AAB está incluído neste repositório até o build terminar.
 
 ## Dependência de publicação da API
 
