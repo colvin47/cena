@@ -25,7 +25,7 @@ O valor opcional `EXPO_PUBLIC_CENA_API_BASE_URL` define a origem HTTPS da API e,
 
 ## APK e AAB
 
-`eas.json` declara o perfil `preview` como distribuição interna Android em formato **APK** instalável e o perfil `production` como **AAB**. Este app usa o projeto Expo `@colvindiegoss-team/cena` (`projectId` `20f42d9f-0388-4563-8601-f6c579bbbafb`), ligado ao repositório `diego47colvin-debug/cena`; no painel Expo, defina o `Base directory` como `mobile` e escolha `Build from GitHub`, o branch `feat/native-first-app-commerce` e o perfil `preview` para Android. A compilação Android nativa deve ser executada pelo serviço remoto Expo; nenhum APK/AAB está incluído neste repositório até o build terminar.
+`eas.json` declara o perfil `preview` como distribuição interna Android em formato **APK** instalável e o perfil `production` como **AAB**. Este app aponta para o projeto Expo original `@colvindiegos-team/cena-mobile` (`projectId` `ca3f0db2-b66a-4625-9c3d-7687501a6393`) e preserva o pacote `com.cena.mobile`. Gerar o APK apenas nesse projeto, mantendo a chave Android original; não criar outra chave nem usar o projeto alternativo `@colvindiegoss-team/cena`. Se o painel original exigir, use o diretório-base `mobile`, o branch `feat/native-first-app-commerce` e o perfil `preview` para Android. Nenhum APK/AAB está incluído neste repositório até o build terminar.
 
 ## Dependência de publicação da API
 
