@@ -1,6 +1,7 @@
-const DEFAULT_API_BASE_URL = "https://cena-kn4vk68m.manus.space";
+const DEFAULT_API_BASE_URL = "";
 const DIRECT_AUDIO_EXTENSIONS = new Set(["aac", "flac", "m4a", "mp3", "mp4", "wav"]);
 const AUDIO_PAGE_HOSTS = ["spotify.com", "youtube.com", "youtu.be", "bandcamp.com", "soundcloud.com"];
+
 function isLocalDevelopmentHost(hostname: string) {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
   if (host === "localhost" || host.endsWith(".localhost") || host === "::1") return true;
@@ -25,7 +26,8 @@ function parseHttpUrl(value: string, allowLocalHttp: boolean): URL | undefined {
 }
 
 export function validatedApiBaseUrl(configured?: string | null, isDevelopment = false) {
-  const value = configured?.trim() || DEFAULT_API_BASE_URL;
+  const value = configured?.trim();
+  if (!value) throw new Error("Defina EXPO_PUBLIC_CENA_API_BASE_URL com a origem da API da nova cópia CENA.");
   const url = parseHttpUrl(value, isDevelopment);
   if (!url || url.search || url.hash) {
     throw new Error("A URL base da API CENA deve usar HTTPS (ou HTTP apenas para um host local em desenvolvimento) e não pode conter credenciais, query ou fragmento.");

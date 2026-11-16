@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createCenaApiClient } from "../lib/cena-api";
+import { CenaApiError, createCenaApiClient, isInvalidSessionError } from "../lib/cena-api";
 import { directAudioUrl, validatedApiBaseUrl, validatedMediaUrl } from "../lib/media-urls";
 
 const API_BASE = "https://api.cena.test";
-function clientWith(fetcher: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>, timeoutMs = 1000) {
-  return createCenaApiClient(API_BASE, fetcher, timeoutMs);
+function clientWith(fetcher: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>, timeoutMs = 1000, getAuthToken?: () => string | null) {
+  return createCenaApiClient(API_BASE, fetcher, timeoutMs, getAuthToken);
 }
 
 describe("cliente API CENA offline", () => {
@@ -20,6 +20,18 @@ describe("cliente API CENA offline", () => {
     expect(JSON.parse(decodeURIComponent(parsed.searchParams.get("input") || ""))).toEqual({ json: { id: 42 } });
     expect(init?.method).toBe("GET");
     expect(init?.headers).toEqual({ Accept: "application/json" });
+  });
+
+  it("envia mutations por POST e inclui Bearer sem colocar a sessão no URL", async () => {
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => new Response(JSON.stringify({ result: { data: { json: { accepted: true } } } }), { status: 200 }));
+    const result = await clientWith(fetcher, 1000, () => "cena_secure_session").mutation<{ accepted: boolean }>("auth.registerEmail", { email: "listener@example.com" });
+    expect(result).toEqual({ accepted: true });
+    const [requestUrl, init] = fetcher.mock.calls[0];
+    expect(String(requestUrl)).toBe(`${API_BASE}/api/trpc/auth.registerEmail`);
+    expect(init?.method).toBe("POST");
+    expect(init?.headers).toEqual({ Accept: "application/json", Authorization: "Bearer cena_secure_session", "Content-Type": "application/json" });
+    expect(JSON.parse(String(init?.body))).toEqual({ json: { email: "listener@example.com" } });
+    expect(String(requestUrl)).not.toContain("cena_secure_session");
   });
 
   it("retorna dados tRPC sem subcampo json e respeita erro da resposta HTTP", async () => {
@@ -51,7 +63,32 @@ describe("cliente API CENA offline", () => {
   });
 });
 
+describe("erros de sessão", () => {
+  it("classifica como inválidos só erros de autenticação definitivos", () => {
+    expect(isInvalidSessionError(new CenaApiError("Sessão inválida", 401, "UNAUTHORIZED"))).toBe(true);
+    expect(isInvalidSessionError(new CenaApiError("Serviço indisponível", 503, "INTERNAL_SERVER_ERROR"))).toBe(false);
+    expect(isInvalidSessionError(new TypeError("Network request failed"))).toBe(false);
+    expect(isInvalidSessionError(new Error("timeout"))).toBe(false);
+  });
+
+  it("preserva o código tRPC e o HTTP 401 no erro tipado", async () => {
+    const unauthorized = clientWith(async () => new Response(JSON.stringify({
+      error: { json: { message: "Sessão inválida", data: { code: "UNAUTHORIZED", httpStatus: 401 } } },
+    }), { status: 401 }));
+    await expect(unauthorized.query("auth.me", {})).rejects.toMatchObject({
+      name: "CenaApiError",
+      status: 401,
+      trpcCode: "UNAUTHORIZED",
+    });
+  });
+});
+
 describe("validação de URLs", () => {
+  it("exige uma origem de API explicitamente configurada para a cópia", () => {
+    expect(() => validatedApiBaseUrl(undefined)).toThrow("EXPO_PUBLIC_CENA_API_BASE_URL");
+    expect(() => validatedApiBaseUrl("   ")).toThrow("EXPO_PUBLIC_CENA_API_BASE_URL");
+  });
+
   it("aceita HTTPS e apenas HTTP para endereços locais de desenvolvimento", () => {
     expect(validatedApiBaseUrl("https://api.cena.test/")).toBe("https://api.cena.test");
     expect(validatedApiBaseUrl("http://localhost:3000", true)).toBe("http://localhost:3000");

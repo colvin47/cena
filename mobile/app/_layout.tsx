@@ -5,6 +5,7 @@ import "react-native-reanimated";
 import { CenaAudioProvider } from "@/hooks/CenaAudio";
 import { LocalCityProvider } from "@/hooks/LocalCity";
 import { LocalLibraryProvider } from "@/hooks/LocalLibrary";
+import { CenaAuthProvider } from "@/hooks/CenaAuth";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { theme } from "@/components/theme";
 
@@ -20,23 +21,25 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <LocalCityProvider>
-        <LocalLibraryProvider>
-          <CenaAudioProvider>
-            <ThemeProvider value={cenaTheme}>
-              <StatusBar style="light" />
-              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="artist/[handle]" />
-                <Stack.Screen name="event/[id]" />
-                <Stack.Screen name="track/[id]" />
-                <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-              </Stack>
-              <MiniPlayer />
-            </ThemeProvider>
-          </CenaAudioProvider>
-        </LocalLibraryProvider>
-      </LocalCityProvider>
+      <CenaAuthProvider>
+        <LocalCityProvider>
+          <LocalLibraryProvider>
+            <CenaAudioProvider>
+              <ThemeProvider value={cenaTheme}>
+                <StatusBar style="light" />
+                <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="artist/[handle]" />
+                  <Stack.Screen name="event/[id]" />
+                  <Stack.Screen name="track/[id]" />
+                  <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+                </Stack>
+                <MiniPlayer />
+              </ThemeProvider>
+            </CenaAudioProvider>
+          </LocalLibraryProvider>
+        </LocalCityProvider>
+      </CenaAuthProvider>
     </SafeAreaProvider>
   );
 }

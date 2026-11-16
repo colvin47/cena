@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: theme.lavender, fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },
   title: { color: theme.text, fontSize: 31, fontWeight: "900", letterSpacing: -0.7 },
   subtitle: { color: theme.muted, fontSize: 12, lineHeight: 18 },
-  privateCard: { padding: 14, gap: 5, borderRadius: 15, borderWidth: 1, borderColor: "rgba(200,243,106,0.32)", backgroundColor: "rgba(200,243,106,0.07)" },
+  privateCard: { padding: 14, gap: 5, borderRadius: 15, borderWidth: 1, borderColor: "rgba(240, 90, 114,0.32)", backgroundColor: "rgba(240, 90, 114,0.07)" },
   privateTitle: { color: theme.lime, fontSize: 12, fontWeight: "900" },
   privateBody: { color: theme.text, fontSize: 11, lineHeight: 16 },
   loading: { flexDirection: "row", alignItems: "center", gap: 10 },

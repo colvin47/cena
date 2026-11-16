@@ -42,7 +42,7 @@ export function TrackCard({ track, queue, isDemo = false }: { track: Track; queu
 
 const styles = StyleSheet.create({
   card: { flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderWidth: 1, borderColor: theme.line, borderRadius: 15, backgroundColor: theme.surface },
-  cardActive: { borderColor: "rgba(197,38,66,0.5)", backgroundColor: "#24142F" },
+  cardActive: { borderColor: "rgba(240, 90, 114,0.5)", backgroundColor: "#1C1018" },
   playButton: { width: 54, height: 54, borderRadius: 11, overflow: "hidden", backgroundColor: theme.surfaceRaised },
   cover: { width: 54, height: 54 },
   coverFallback: { alignItems: "center", justifyContent: "center" },

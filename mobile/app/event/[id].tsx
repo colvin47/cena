@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   infoCard: { padding: 12, borderRadius: 12, backgroundColor: theme.surfaceRaised, gap: 5 },
   infoLabel: { color: theme.lavender, fontSize: 8, fontWeight: "900", letterSpacing: 1 },
   infoValue: { color: theme.text, fontSize: 11 },
-  cancelled: { padding: 13, borderLeftWidth: 3, borderLeftColor: theme.coral, backgroundColor: "rgba(255,118,95,0.1)", gap: 5 },
+  cancelled: { padding: 13, borderLeftWidth: 3, borderLeftColor: theme.coral, backgroundColor: "rgba(240, 90, 114,0.1)", gap: 5 },
   cancelledTitle: { color: theme.coral, fontSize: 12, fontWeight: "900" },
   ticket: { padding: 13, borderRadius: 14, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface, gap: 6 },
   ticketTop: { flexDirection: "row", gap: 8, justifyContent: "space-between", alignItems: "center" },
