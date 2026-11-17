@@ -1,19 +1,24 @@
 # CENA para Android
 
-O app Expo/React Native é a experiência principal de descoberta e reprodução do CENA. O site responsivo é complementar: continua sendo a página pública e o espaço de gestão de perfis, catálogo e agenda. Ambos apontam para a mesma API CENA; o app não cria uma cópia do banco, dos usuários ou dos uploads.
+O app Expo/React Native usa a API existente da cópia CENA (`https://cenacopy-rjglbygs.manus.space`). Descoberta, busca, agenda, reprodução e favoritos locais foram preservados; o app não cria outro banco de faixas, usuários ou uploads.
 
-## O que o app faz
+## Login Manus
 
-- Descobre faixas, artistas e eventos por cidade e gênero.
-- Reproduz áudio e mantém favoritos locais no aparelho.
-- Abre páginas de artistas, eventos, endereço no mapa e destinos externos.
-- Mostra lotes de ingresso e merchandise como informação; não vende, reserva nem processa pagamento.
-- Permite entrar/criar uma conta CENA por e-mail; a confirmação e a recuperação da palavra-passe são feitas por e-mail. Manus OAuth continua opcional no site durante a transição.
-- Favoritos continuam locais e privados neste aparelho; não há sincronização de favoritos, upload nem recolha de localização do dispositivo nesta versão.
+No Android, **Entrar com Manus** abre o navegador do sistema. O app valida um `state` próprio, recebe apenas um ticket opaco de curta duração pelo deep link e troca esse ticket por uma sessão Bearer na API CENA. O código OAuth fica no servidor; o JWT não entra no deep link e a sessão do Android é guardada no `SecureStore`. O app não tenta associar contas automaticamente por e-mail.
+
+O app espera o scheme `cena` desta branch (`cena://oauth/callback`). O backend precisa conter as rotas nativas, `auth.exchangeMobileOAuthTicket` e a tabela `mobileOAuthTickets` da migration `drizzle/0016_silly_doctor_strange.sql`. O código da migration foi gerado, mas **não foi aplicado ao banco publicado**, e as alterações de backend **ainda não foram implantadas**. Até essa implantação, o login Manus nativo não estará operacional.
+
+A rota usa `CENA_PUBLIC_BASE_URL` (padrão: `https://cenacopy-rjglbygs.manus.space`) e permite schemes definidos em `CENA_MOBILE_APP_CALLBACK_URIS`; sem essa configuração, aceita apenas `cena://oauth/callback`. Para permitir também a cópia WebDev, inclua o callback dela na allowlist do servidor, sem substituir `cena://oauth/callback`.
+
+## Envio de música
+
+O envio exige login Manus validado pela API, conta com perfil artístico, perfil de artista/banda, título, áudio e confirmação de direitos. Áudio: MP3, WAV, M4A ou OGG, até 50 MB. Capa é opcional: JPG, JPEG, PNG ou WebP, até 10 MB. O formulário reutiliza o endpoint `/api/upload`, o storage oficial e `scene.createTrack`; preserva metadados existentes (álbum, gênero, cidade, descrição, tipo/data de lançamento, visibilidade, créditos e coletivo quando a conta tem permissão `owner` ou `editor`). O servidor valida novamente sessão, tipo/tamanho, propriedade dos arquivos, perfil e permissões.
+
+Após uma resposta de publicação ambígua, os arquivos são preservados e a mesma chave de idempotência é reutilizada se a pessoa tentar novamente sem alterar o formulário. Se o app for fechado durante o envio, confira primeiro no site/catálogo se a faixa foi publicada antes de iniciar outra tentativa. Nenhum arquivo real foi enviado durante a validação local.
 
 ## Executar e verificar
 
-Requisitos: Node.js 22 e pnpm 10.18.0. Na pasta `mobile/`:
+Requisitos e versões estão pinados em `mobile/package.json` e `mobile/pnpm-lock.yaml` (`pnpm@10.18.0`). Na pasta `mobile/`:
 
 ```bash
 corepack pnpm install --frozen-lockfile
@@ -21,12 +26,6 @@ corepack pnpm check
 corepack pnpm start
 ```
 
-Preencha `EXPO_PUBLIC_CENA_API_BASE_URL` com a origem HTTPS da API desta cópia antes de iniciar o Expo localmente; no EAS, a variável já está definida em texto simples apenas para `preview` com o URL `https://cenacopy-rjglbygs.manus.space`. Não existe fallback para o domínio do site anterior. Não coloque tokens ou segredos em variáveis `EXPO_PUBLIC_*`.
+Defina `EXPO_PUBLIC_CENA_API_BASE_URL` com a origem HTTPS da API CENA. O perfil EAS `preview` já usa `https://cenacopy-rjglbygs.manus.space`; não coloque tokens ou segredos em variáveis `EXPO_PUBLIC_*`.
 
-## APK e AAB
-
-`eas.json` declara o perfil `preview` como distribuição interna Android em formato **APK** instalável e o perfil `production` como **AAB**. `mobile/app.json` está vinculado ao projeto `@colvindiegoss-team/cena`, slug `cena` e projectId `20f42d9f-0388-4563-8601-f6c579bbbafb`. O EAS está ligado à branch existente `feat/native-first-app-commerce`, que não contém todas as atualizações desta cópia. A branch separada `manus-cenacopy-preview` deve conter o app atualizado, sem alterar `main` nem a branch existente. O perfil `preview` já aponta para a API pública desta cópia; ainda não existe APK novo. A compilação nativa é remota pelo Dashboard EAS; não executar EAS Build dentro do Sandbox.
-
-## Dependência de publicação da API
-
-A cadeia de migrations, incluindo `0015_cena_mobile_commerce_analytics.sql` e `0016_email_auth.sql`, já foi aplicada apenas ao MySQL novo e inicialmente vazio desta cópia. A base e o site publicados anteriores não foram tocados. A API da cópia está publicada em `https://cenacopy-rjglbygs.manus.space`; o novo APK ainda aguarda o build remoto da branch atualizada. Não executar migrations contra a base antiga sem autorização explícita do ambiente e revisão operacional correspondente.
+Os testes do backend e das regras de upload ficam na raiz do repositório CENA (`corepack pnpm test`). O APK anterior continua sendo de teste e não foi substituído. Nenhum build EAS novo foi iniciado nesta sessão: o acesso ao GitHub/EAS ainda precisa estar habilitado e a branch `manus-cenacopy-preview` precisa receber o patch antes de um build remoto.

@@ -22,16 +22,18 @@ describe("cliente API CENA offline", () => {
     expect(init?.headers).toEqual({ Accept: "application/json" });
   });
 
-  it("envia mutations por POST e inclui Bearer sem colocar a sessão no URL", async () => {
+  it("envia a troca do ticket OAuth por POST e mantém ticket e sessão fora do URL", async () => {
     const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => new Response(JSON.stringify({ result: { data: { json: { accepted: true } } } }), { status: 200 }));
-    const result = await clientWith(fetcher, 1000, () => "cena_secure_session").mutation<{ accepted: boolean }>("auth.registerEmail", { email: "listener@example.com" });
+    const ticket = "opaque_one_time_mobile_oauth_ticket";
+    const result = await clientWith(fetcher, 1000, () => "cena_secure_session").mutation<{ accepted: boolean }>("auth.exchangeMobileOAuthTicket", { ticket });
     expect(result).toEqual({ accepted: true });
     const [requestUrl, init] = fetcher.mock.calls[0];
-    expect(String(requestUrl)).toBe(`${API_BASE}/api/trpc/auth.registerEmail`);
+    expect(String(requestUrl)).toBe(`${API_BASE}/api/trpc/auth.exchangeMobileOAuthTicket`);
     expect(init?.method).toBe("POST");
     expect(init?.headers).toEqual({ Accept: "application/json", Authorization: "Bearer cena_secure_session", "Content-Type": "application/json" });
-    expect(JSON.parse(String(init?.body))).toEqual({ json: { email: "listener@example.com" } });
+    expect(JSON.parse(String(init?.body))).toEqual({ json: { ticket } });
     expect(String(requestUrl)).not.toContain("cena_secure_session");
+    expect(String(requestUrl)).not.toContain(ticket);
   });
 
   it("retorna dados tRPC sem subcampo json e respeita erro da resposta HTTP", async () => {

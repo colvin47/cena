@@ -1,7 +1,9 @@
+import Constants from "expo-constants";
 import type { ArtistDetail, DiscoveryResult, EventTicket, MerchandiseItem, SceneEvent, Track } from "./types";
 import { validatedApiBaseUrl, validatedMediaUrl } from "./media-urls";
 
-const configuredBaseUrl = process.env.EXPO_PUBLIC_CENA_API_BASE_URL?.trim();
+const extraBaseUrl = Constants.expoConfig?.extra?.cenaApiBaseUrl;
+const configuredBaseUrl = process.env.EXPO_PUBLIC_CENA_API_BASE_URL?.trim() || (typeof extraBaseUrl === "string" ? extraBaseUrl.trim() : undefined);
 const isDevelopment = typeof __DEV__ !== "undefined" && __DEV__;
 export const CENA_API_BASE_URL = validatedApiBaseUrl(configuredBaseUrl, isDevelopment);
 const REQUEST_TIMEOUT_MS = 15_000;

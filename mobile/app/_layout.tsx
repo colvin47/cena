@@ -32,6 +32,7 @@ export default function RootLayout() {
                   <Stack.Screen name="artist/[handle]" />
                   <Stack.Screen name="event/[id]" />
                   <Stack.Screen name="track/[id]" />
+                  <Stack.Screen name="upload" />
                   <Stack.Screen name="modal" options={{ presentation: "modal" }} />
                 </Stack>
                 <MiniPlayer />

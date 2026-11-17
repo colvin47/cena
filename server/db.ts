@@ -17,6 +17,7 @@ import {
   playlists,
   notifications,
   merchandise,
+  mobileOAuthTickets,
   savedTracks,
   trackPlays,
   trackCredits,
@@ -76,6 +77,55 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
 
   await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+}
+
+export type MobileOAuthIdentity = {
+  openId: string;
+  name: string | null;
+  email: string | null;
+  loginMethod: string | null;
+};
+
+const MOBILE_OAUTH_TICKET_TTL_MS = 5 * 60 * 1000;
+
+export async function issueMobileOAuthTicket(identity: MobileOAuthIdentity) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+
+  const ticket = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(ticket).digest("hex");
+  const now = new Date();
+  await db.delete(mobileOAuthTickets).where(lte(mobileOAuthTickets.expiresAt, now));
+  await db.insert(mobileOAuthTickets).values({
+    tokenHash,
+    openId: identity.openId,
+    name: identity.name,
+    email: identity.email,
+    loginMethod: identity.loginMethod,
+    expiresAt: new Date(now.getTime() + MOBILE_OAUTH_TICKET_TTL_MS),
+  });
+  return ticket;
+}
+
+export async function consumeMobileOAuthTicket(ticket: string): Promise<MobileOAuthIdentity | null> {
+  const db = await getDb();
+  if (!db || !/^[A-Za-z0-9_-]{40,64}$/.test(ticket)) return null;
+
+  const tokenHash = createHash("sha256").update(ticket).digest("hex");
+  return db.transaction(async tx => {
+    const rows = await tx.select().from(mobileOAuthTickets)
+      .where(eq(mobileOAuthTickets.tokenHash, tokenHash))
+      .limit(1)
+      .for("update");
+    const row = rows[0];
+    if (!row || row.expiresAt.getTime() <= Date.now()) {
+      if (row) await tx.delete(mobileOAuthTickets).where(eq(mobileOAuthTickets.id, row.id));
+      return null;
+    }
+
+    await tx.delete(mobileOAuthTickets).where(eq(mobileOAuthTickets.id, row.id));
+    return { openId: row.openId, name: row.name, email: row.email, loginMethod: row.loginMethod };
+  });
 }
 
 export async function getUserByOpenId(openId: string) {

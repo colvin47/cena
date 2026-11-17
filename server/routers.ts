@@ -11,6 +11,9 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
 import { canAudit, canBroadcast, canModerate } from "./permissions";
 import { parseExternalTrackUrl } from "@shared/track-source";
+import { ONE_YEAR_MS } from "@shared/const";
+import { consumeMobileOAuthTicket, getUserByOpenId, upsertUser } from "./db";
+import { sdk } from "./_core/sdk";
 
 const discoveryInput = z.object({
   city: z.string().trim().min(1).max(120).default("Campinas"),
@@ -71,6 +74,16 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    exchangeMobileOAuthTicket: publicProcedure.input(z.object({ ticket: z.string().regex(/^[A-Za-z0-9_-]{40,64}$/) })).mutation(async ({ input }) => {
+      const identity = await consumeMobileOAuthTicket(input.ticket);
+      if (!identity) throw new TRPCError({ code: "UNAUTHORIZED", message: "O ticket de login expirou ou já foi usado. Entre novamente." });
+
+      await upsertUser({ ...identity, lastSignedIn: new Date() });
+      const user = await getUserByOpenId(identity.openId);
+      if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível abrir a conta CENA." });
+      const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
+      return { sessionToken };
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie("webdev_app_session", { ...cookieOptions, maxAge: -1 });

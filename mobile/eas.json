@@ -6,6 +6,9 @@
   "build": {
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CENA_API_BASE_URL": "https://cenacopy-rjglbygs.manus.space"
+      },
       "android": {
         "buildType": "apk"
       }
