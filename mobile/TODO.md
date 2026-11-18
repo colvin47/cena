@@ -22,7 +22,7 @@
 
 - [x] `pnpm check`, `pnpm test` e `pnpm build` executados em `/home/ubuntu/cena-main`; nenhum login real, upload, mutation ou gravação foi executado. O APK anterior permanece disponível e não foi substituído.
 - [x] **Backend atualizado em GitHub main.** O commit `ea2ca9f` foi enviado por fast-forward a `main`; `feat/native-first-app-commerce` permaneceu no SHA `7268059`. O workflow do GitHub Pages não foi disparado pelo commit com `[skip ci]`.
-- [x] **Configuração de API Android atualizada na branch isolada.** O perfil EAS `preview` e `.env.example` usam `https://cena-kn4vk68m.manus.space`; esquema nativo `cena` e identificadores Expo foram preservados. Esta atualização ainda precisa ser enviada à branch `manus-cenacopy-preview`.
+- [x] **Configuração de API Android atualizada na branch isolada.** O perfil EAS `preview` e `.env.example` usam `https://cena-kn4vk68m.manus.space`; esquema nativo `cena` e identificadores Expo foram preservados. Commit `74fbdd4` enviado à branch `manus-cenacopy-preview`; nenhuma build nova foi iniciada.
 - [ ] **Gerar o APK Android final.** A nova build EAS `preview` não foi iniciada porque o backend ainda não está publicado no domínio principal; gerar antes disso produziria um APK que não permite validar login/upload. Após o checkpoint e publicação do backend, gerar a build Android APK no Expo/EAS e validar no aparelho.
 
 ## Trabalho visual e de descoberta previamente aprovado
