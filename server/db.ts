@@ -6,6 +6,7 @@ import {
   auditLogs,
   collectiveMembers,
   collectiveInvites,
+  mobileOAuthTickets,
   collectives,
   moderationReports,
   eventInterests,
@@ -22,6 +23,7 @@ import {
   users,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { sql } from "drizzle-orm";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -74,6 +76,90 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
 
   await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+}
+
+export type MobileOAuthIdentity = {
+  openId: string;
+  name: string | null;
+  email: string | null;
+  loginMethod: string | null;
+};
+
+const MOBILE_OAUTH_TICKET_TTL_MS = 5 * 60 * 1000;
+
+const MOBILE_OAUTH_TICKETS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS mobileOAuthTickets (
+  id INT NOT NULL AUTO_INCREMENT,
+  tokenHash VARCHAR(64) NOT NULL,
+  openId VARCHAR(64) NOT NULL,
+  name TEXT,
+  email VARCHAR(320),
+  loginMethod VARCHAR(64),
+  expiresAt TIMESTAMP NOT NULL,
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT mobileOAuthTickets_id PRIMARY KEY (id),
+  CONSTRAINT mobileOAuthTickets_tokenHash_unique UNIQUE (tokenHash),
+  INDEX idx_mobile_oauth_tickets_expires_at (expiresAt)
+)
+`;
+
+let mobileOAuthTicketsTableReady: Promise<void> | undefined;
+
+export async function ensureMobileOAuthTicketsTable(): Promise<void> {
+  if (!mobileOAuthTicketsTableReady) {
+    mobileOAuthTicketsTableReady = (async () => {
+      const db = await getDb();
+      if (!db) throw new Error("Database is not available");
+      await db.execute(sql.raw(MOBILE_OAUTH_TICKETS_TABLE_SQL));
+    })().catch(error => {
+      mobileOAuthTicketsTableReady = undefined;
+      throw error;
+    });
+  }
+  await mobileOAuthTicketsTableReady;
+}
+
+export async function issueMobileOAuthTicket(identity: MobileOAuthIdentity) {
+  await ensureMobileOAuthTicketsTable();
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+
+  const ticket = randomBytes(32).toString("base64url");
+  const tokenHash = createHash("sha256").update(ticket).digest("hex");
+  const now = new Date();
+  await db.delete(mobileOAuthTickets).where(lte(mobileOAuthTickets.expiresAt, now));
+  await db.insert(mobileOAuthTickets).values({
+    tokenHash,
+    openId: identity.openId,
+    name: identity.name,
+    email: identity.email,
+    loginMethod: identity.loginMethod,
+    expiresAt: new Date(now.getTime() + MOBILE_OAUTH_TICKET_TTL_MS),
+  });
+  return ticket;
+}
+
+export async function consumeMobileOAuthTicket(ticket: string): Promise<MobileOAuthIdentity | null> {
+  if (!/^[A-Za-z0-9_-]{40,64}$/.test(ticket)) return null;
+  await ensureMobileOAuthTicketsTable();
+  const db = await getDb();
+  if (!db) return null;
+
+  const tokenHash = createHash("sha256").update(ticket).digest("hex");
+  return db.transaction(async tx => {
+    const rows = await tx.select().from(mobileOAuthTickets)
+      .where(eq(mobileOAuthTickets.tokenHash, tokenHash))
+      .limit(1)
+      .for("update");
+    const row = rows[0];
+    if (!row || row.expiresAt.getTime() <= Date.now()) {
+      if (row) await tx.delete(mobileOAuthTickets).where(eq(mobileOAuthTickets.id, row.id));
+      return null;
+    }
+
+    await tx.delete(mobileOAuthTickets).where(eq(mobileOAuthTickets.id, row.id));
+    return { openId: row.openId, name: row.name, email: row.email, loginMethod: row.loginMethod };
+  });
 }
 
 export async function getUserByOpenId(openId: string) {

@@ -101,6 +101,20 @@ export const collectiveInvites = mysqlTable(
   },
   table => ({ collectiveIdx: index("idx_collective_invites_collective").on(table.collectiveId), tokenIdx: index("idx_collective_invites_token").on(table.tokenHash) }),
 );
+export const mobileOAuthTickets = mysqlTable(
+  "mobileOAuthTickets",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    tokenHash: varchar("tokenHash", { length: 64 }).notNull().unique(),
+    openId: varchar("openId", { length: 64 }).notNull(),
+    name: text("name"),
+    email: varchar("email", { length: 320 }),
+    loginMethod: varchar("loginMethod", { length: 64 }),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({ expiresAtIdx: index("idx_mobile_oauth_tickets_expires_at").on(table.expiresAt) }),
+);
 export const tracks = mysqlTable(
   "tracks",
   {

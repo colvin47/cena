@@ -3,12 +3,14 @@ import express from "express";
 import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { registerMobileOAuthRoutes } from "./mobileOAuth";
 import { publicPlatformScript } from "./publicConfig";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { storagePresignPut } from "../storage";
 import { sdk } from "./sdk";
+import { ensureMobileOAuthTicketsTable } from "../db";
 import { HttpError } from "@shared/_core/errors";
 
 async function startServer() {
@@ -22,6 +24,7 @@ async function startServer() {
     res.set("Cache-Control", "no-store").type("application/javascript").send(publicPlatformScript());
   });
   registerOAuthRoutes(app);
+  registerMobileOAuthRoutes(app);
   app.post("/api/upload", express.raw({ limit: "50mb", type: () => true }), async (req, res) => {
     try {
       const user = await sdk.authenticateRequest(req);
@@ -85,7 +88,12 @@ async function startServer() {
   const port = Number(process.env.PORT || "3000");
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid PORT");
   server.on("error", error => { console.error("Server failed:", error.message); process.exit(1); });
-  server.listen(port, "0.0.0.0", () => console.log(`Server listening on port ${port}`));
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`Server listening on port ${port}`);
+    void ensureMobileOAuthTicketsTable().catch(error => {
+      console.error("[Mobile OAuth] Ticket-table migration failed:", error instanceof Error ? error.message : "unknown error");
+    });
+  });
 }
 
 startServer().catch(error => { console.error(error); process.exit(1); });
