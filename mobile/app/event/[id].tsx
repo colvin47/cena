@@ -76,6 +76,7 @@ export default function EventDetailScreen() {
           <Text style={styles.title}>{event.title}</Text>
           <Text style={styles.date}>{dateLabel(event)}</Text>
           <Text style={styles.body}>{event.place || "Local a confirmar"} · {event.city || "Cidade a confirmar"}</Text>
+          <Text style={styles.interest}>{event.interest ?? 0} pessoas interessadas · nenhum dado individual é exibido</Text>
           {event.artist && <Pressable disabled={!event.handle} onPress={() => event.handle && router.push(`/artist/${encodeURIComponent(event.handle.replace(/^@/, ""))}` as never)}><Text style={styles.artist}>Por {event.artist}</Text></Pressable>}
         </View>
         {event.canceledAt && <View style={styles.cancelled}><Text style={styles.cancelledTitle}>Evento cancelado</Text><Text style={styles.body}>{event.cancelReason || "Consulte a organização para mais informações."}</Text></View>}
@@ -117,6 +118,7 @@ const styles = StyleSheet.create({
   title: { color: theme.text, fontSize: 27, lineHeight: 32, fontWeight: "900", letterSpacing: -0.7 },
   date: { color: theme.soft, fontSize: 12, fontWeight: "800", textTransform: "capitalize" },
   artist: { color: theme.primary, fontSize: 12, fontWeight: "800" },
+  interest: { color: theme.rose, fontSize: 10, fontWeight: "800" },
   body: { color: theme.muted, fontSize: 12, lineHeight: 18 },
   loading: { flexDirection: "row", gap: 10, alignItems: "center", paddingVertical: 14 },
   error: { padding: 15, borderRadius: 15, backgroundColor: theme.surface, gap: 7 },

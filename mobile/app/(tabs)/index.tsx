@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "@/components/Screen";
 import { TrackCard } from "@/components/TrackCard";
@@ -7,6 +7,9 @@ import { theme } from "@/components/theme";
 import { absoluteMediaUrl, getDiscovery } from "@/lib/cena-api";
 import type { DiscoveryResult, SceneEvent } from "@/lib/types";
 import { useLocalCity } from "@/hooks/LocalCity";
+import cityCatalog from "@/data/brazil-cities.json";
+
+type CityOption = { name: string; uf: string };
 
 function SectionTitle({ title, action }: { title: string; action?: string }) {
   return <View style={styles.sectionTitleRow}><Text style={styles.sectionTitle}>{title}</Text>{action ? <Text style={styles.sectionAction}>{action}</Text> : null}</View>;
@@ -27,6 +30,7 @@ export default function DiscoverScreen() {
   const [cityDraft, setCityDraft] = useState(cityState.city);
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("Tudo");
+  const [showCityPicker, setShowCityPicker] = useState(false);
   const [result, setResult] = useState<DiscoveryResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +56,11 @@ export default function DiscoverScreen() {
 
   const genres = useMemo(() => ["Tudo", ...(result?.genres || []).filter(value => value && value !== "Tudo")], [result?.genres]);
   const demo = result?.source === "seed";
+  const cityOptions = useMemo(() => {
+    const query = cityDraft.trim().toLocaleLowerCase("pt-BR");
+    const items = (cityCatalog as CityOption[]).filter(item => !query || `${item.name}, ${item.uf}`.toLocaleLowerCase("pt-BR").includes(query));
+    return items.slice(0, 60);
+  }, [cityDraft]);
 
   return (
     <Screen>
@@ -66,7 +75,7 @@ export default function DiscoverScreen() {
         <Text style={styles.fieldLabel}>SUA CIDADE · ESCOLHA MANUAL</Text>
         <View style={styles.cityRow}>
           <TextInput value={cityDraft} onChangeText={setCityDraft} onSubmitEditing={() => cityState.setCity(cityDraft)} placeholder="Cidade, UF" placeholderTextColor={theme.muted} returnKeyType="search" style={styles.cityInput} accessibilityLabel="Cidade para descoberta" />
-          <Pressable style={styles.cityButton} onPress={() => cityState.setCity(cityDraft)} accessibilityRole="button"><Text style={styles.cityButtonText}>VER</Text></Pressable>
+          <Pressable style={styles.cityButton} onPress={() => setShowCityPicker(true)} accessibilityRole="button"><Text style={styles.cityButtonText}>ESCOLHER</Text></Pressable>
         </View>
         <Text style={styles.cityNote}>Localização não é coletada automaticamente.</Text>
       </View>
@@ -112,6 +121,9 @@ export default function DiscoverScreen() {
 
       {result?.source === "empty" && <View style={styles.emptyCard}><Text style={styles.emptyTitle}>A cena cresce com quem faz.</Text><Text style={styles.emptyCopy}>Ainda não há publicações nesta região. Volte mais tarde ou procure uma cidade próxima.</Text></View>}
       <Text style={styles.footer}>CENA · MÚSICA INDEPENDENTE, PERTO DE VOCÊ</Text>
+      <Modal visible={showCityPicker} transparent animationType="slide" onRequestClose={() => setShowCityPicker(false)}>
+        <View style={styles.modalOverlay}><View style={styles.cityModal}><View style={styles.modalHeader}><Text style={styles.modalTitle}>Escolha seu município</Text><Pressable onPress={() => setShowCityPicker(false)} accessibilityRole="button"><Text style={styles.modalClose}>FECHAR</Text></Pressable></View><Text style={styles.modalHint}>Busque por cidade ou UF. O CENA não coleta sua localização automaticamente.</Text><TextInput autoFocus value={cityDraft} onChangeText={setCityDraft} placeholder="Ex.: Recife, PE" placeholderTextColor={theme.muted} style={styles.modalInput} accessibilityLabel="Pesquisar município brasileiro" /><ScrollView keyboardShouldPersistTaps="handled" style={styles.cityResults}>{cityOptions.map(item => { const value = `${item.name}, ${item.uf}`; return <Pressable key={value} onPress={() => { setCityDraft(value); cityState.setCity(value); setShowCityPicker(false); }} style={styles.cityOption} accessibilityRole="button"><Text style={styles.cityOptionName}>{item.name}</Text><Text style={styles.cityOptionUf}>{item.uf}</Text></Pressable>; })}</ScrollView>{cityOptions.length === 0 && <Text style={styles.emptyCopy}>Nenhum município encontrado. Tente outro nome.</Text>}<Pressable style={styles.cityApply} onPress={() => { cityState.setCity(cityDraft); setShowCityPicker(false); }}><Text style={styles.cityApplyText}>USAR ESTA CIDADE</Text></Pressable></View></View>
+      </Modal>
     </Screen>
   );
 }
@@ -132,6 +144,19 @@ const styles = StyleSheet.create({
   cityButton: { minHeight: 40, paddingHorizontal: 15, alignItems: "center", justifyContent: "center", borderRadius: 11, backgroundColor: theme.primary },
   cityButtonText: { color: theme.background, fontSize: 11, fontWeight: "900", letterSpacing: 0.8 },
   cityNote: { color: theme.muted, fontSize: 10 },
+  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(8,7,10,0.72)" },
+  cityModal: { maxHeight: "86%", backgroundColor: theme.background, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 18, gap: 10 },
+  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  modalTitle: { color: theme.text, fontSize: 20, fontWeight: "900" },
+  modalClose: { color: theme.primary, fontSize: 9, fontWeight: "900", letterSpacing: 0.7 },
+  modalHint: { color: theme.muted, fontSize: 11, lineHeight: 16 },
+  modalInput: { minHeight: 46, backgroundColor: theme.surface, borderColor: theme.line, borderWidth: 1, borderRadius: 12, paddingHorizontal: 13, color: theme.text, fontSize: 14 },
+  cityResults: { minHeight: 180 },
+  cityOption: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: theme.line },
+  cityOptionName: { color: theme.text, fontSize: 13, fontWeight: "700" },
+  cityOptionUf: { color: theme.primary, fontSize: 10, fontWeight: "900" },
+  cityApply: { minHeight: 45, borderRadius: 12, backgroundColor: theme.primary, alignItems: "center", justifyContent: "center" },
+  cityApplyText: { color: theme.background, fontSize: 11, fontWeight: "900", letterSpacing: 0.6 },
   searchInput: { minHeight: 48, backgroundColor: theme.surface, borderColor: theme.line, borderWidth: 1, borderRadius: 13, paddingHorizontal: 14, color: theme.text, fontSize: 13 },
   genreRow: { gap: 8, paddingRight: 18 },
   genreChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 22, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface },

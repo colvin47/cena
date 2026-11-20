@@ -50,6 +50,7 @@ export default function TrackDetailScreen() {
           <Text style={styles.meta}>{[track.album, track.genre, track.city, durationLabel(track.duration)].filter(Boolean).join(" · ")}</Text>
           {track.description && <Text style={styles.body}>{track.description}</Text>}
           {track.creditsNote && <View style={styles.credits}><Text style={styles.creditsTitle}>CRÉDITOS E DIREITOS</Text><Text style={styles.body}>{track.creditsNote}</Text></View>}
+          <View style={styles.credits}><Text style={styles.creditsTitle}>LETRA</Text><Text style={track.lyrics?.trim() ? styles.lyrics : styles.body}>{track.lyrics?.trim() || "O artista ainda não cadastrou uma letra para esta faixa."}</Text></View>
         </View>
         <TrackCard track={track} queue={[track]} />
         {audio.error && audio.currentTrack?.id === track.id && <Text style={styles.errorText}>{audio.error}</Text>}
@@ -72,6 +73,7 @@ const styles = StyleSheet.create({
   panel: { padding: 15, borderRadius: 15, backgroundColor: theme.surface, gap: 8 },
   credits: { padding: 12, gap: 5, borderRadius: 12, backgroundColor: theme.surfaceRaised },
   creditsTitle: { color: theme.rose, fontSize: 8, fontWeight: "900", letterSpacing: 1 },
+  lyrics: { color: theme.text, fontSize: 14, lineHeight: 23 },
   errorText: { color: theme.coral, fontSize: 11 },
   footer: { color: theme.muted, fontSize: 10, textAlign: "center", lineHeight: 15 },
 });
