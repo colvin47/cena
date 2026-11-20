@@ -2,6 +2,7 @@ import appJson from "./app.json";
 const expo = appJson.expo;
 export default {
   ...expo,
+  slug: "cena",
   owner: "colvindiegoss-team",
   extra: {
     ...(expo.extra || {}),
