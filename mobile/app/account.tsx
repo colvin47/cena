@@ -15,6 +15,7 @@ export default function AccountScreen() {
   const { city } = useLocalCity();
   const [title, setTitle] = useState("");
   const [genre, setGenre] = useState("");
+  const [lyrics, setLyrics] = useState("");
   const [audio, setAudio] = useState<Picked | null>(null);
   const [cover, setCover] = useState<Picked | null>(null);
   const [rights, setRights] = useState(false);
@@ -35,9 +36,9 @@ export default function AccountScreen() {
     try {
       const audioUrl = await uploadFile(auth.token, { uri: audio.uri, fileName: audio.name, contentType: audio.mimeType, kind: "audio", uploadId: uploadId() });
       const coverUrl = cover ? await uploadFile(auth.token, { uri: cover.uri, fileName: cover.name, contentType: cover.mimeType, kind: "image", uploadId: uploadId() }) : undefined;
-      const result = await createTrack(auth.token, { title: title.trim(), genre: genre.trim() || undefined, city, audioUrl, coverUrl, releaseType: "single", rightsDeclared: true });
+      const result = await createTrack(auth.token, { title: title.trim(), genre: genre.trim() || undefined, lyrics: lyrics.trim() || undefined, city, audioUrl, coverUrl, releaseType: "single", rightsDeclared: true });
       setMessage(result.persisted ? "Faixa enviada para publicação." : "O envio foi recebido, mas aguarda disponibilidade do banco.");
-      setTitle(""); setGenre(""); setAudio(null); setCover(null); setRights(false);
+      setTitle(""); setGenre(""); setLyrics(""); setAudio(null); setCover(null); setRights(false);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível publicar a faixa."); }
     finally { setWorking(false); }
   };
@@ -45,7 +46,7 @@ export default function AccountScreen() {
   if (auth.loading) return <Screen><Text style={styles.muted}>Carregando sua conta…</Text></Screen>;
   if (!auth.user) return <Screen><Text style={styles.kicker}>CENA · CONTA</Text><Text style={styles.title}>Entre para fazer parte da cena.</Text><Text style={styles.body}>O login abre o navegador do sistema. O app recebe somente um ticket temporário e guarda a sessão com segurança no aparelho.</Text><Pressable style={styles.primary} onPress={() => void auth.signIn().catch(error => setMessage(error instanceof Error ? error.message : "Não foi possível entrar."))}><Text style={styles.primaryText}>ENTRAR COM MANUS</Text></Pressable>{message ? <Text style={styles.error}>{message}</Text> : null}</Screen>;
 
-  return <Screen><View style={styles.header}><View><Text style={styles.kicker}>CENA · CONTA</Text><Text style={styles.title}>{auth.user.name || "Sua conta"}</Text><Text style={styles.body}>{auth.user.email || "Sessão protegida no aparelho."}</Text></View><Pressable onPress={() => void auth.signOut()}><Text style={styles.link}>SAIR</Text></Pressable></View><View style={styles.card}><Text style={styles.cardTitle}>Publicar uma faixa</Text><Text style={styles.body}>Envie áudio e capa pelo storage oficial. A CENA não processa pagamento nem confirma direitos por você.</Text><TextInput value={title} onChangeText={setTitle} placeholder="Título da faixa" placeholderTextColor={theme.muted} style={styles.input} /><TextInput value={genre} onChangeText={setGenre} placeholder="Gênero (opcional)" placeholderTextColor={theme.muted} style={styles.input} /><Pressable style={styles.fileButton} onPress={() => void pick("audio")}><Text style={styles.fileText}>{audio ? `ÁUDIO · ${audio.name}` : "ESCOLHER ÁUDIO · MP3, WAV, M4A OU OGG"}</Text></Pressable><Pressable style={styles.fileButton} onPress={() => void pick("image")}><Text style={styles.fileText}>{cover ? `CAPA · ${cover.name}` : "ESCOLHER CAPA · OPCIONAL"}</Text></Pressable><Pressable style={styles.checkRow} onPress={() => setRights(value => !value)}><View style={[styles.checkbox, rights && styles.checkboxActive]} /><Text style={styles.body}>Confirmo que tenho autorização para publicar este áudio e esta capa.</Text></Pressable><Pressable disabled={working || !audio || !title.trim() || !rights} style={[styles.primary, (working || !audio || !title.trim() || !rights) && styles.disabled]} onPress={() => void publish()}><Text style={styles.primaryText}>{working ? "ENVIANDO…" : "PUBLICAR FAIXA"}</Text></Pressable>{message ? <Text style={message.includes("enviada") ? styles.success : styles.error}>{message}</Text> : null}</View></Screen>;
+  return <Screen><View style={styles.header}><View><Text style={styles.kicker}>CENA · CONTA</Text><Text style={styles.title}>{auth.user.name || "Sua conta"}</Text><Text style={styles.body}>{auth.user.email || "Sessão protegida no aparelho."}</Text></View><Pressable onPress={() => void auth.signOut()}><Text style={styles.link}>SAIR</Text></Pressable></View><View style={styles.card}><Text style={styles.cardTitle}>Publicar uma faixa</Text><Text style={styles.body}>Envie áudio e capa pelo storage oficial. A CENA não processa pagamento nem confirma direitos por você.</Text><TextInput value={title} onChangeText={setTitle} placeholder="Título da faixa" placeholderTextColor={theme.muted} style={styles.input} /><TextInput value={genre} onChangeText={setGenre} placeholder="Gênero (opcional)" placeholderTextColor={theme.muted} style={styles.input} /><TextInput value={lyrics} onChangeText={setLyrics} placeholder="Letra (opcional)" placeholderTextColor={theme.muted} style={[styles.input, styles.multiline]} multiline textAlignVertical="top" /><Pressable style={styles.fileButton} onPress={() => void pick("audio")}><Text style={styles.fileText}>{audio ? `ÁUDIO · ${audio.name}` : "ESCOLHER ÁUDIO · MP3, WAV, M4A OU OGG"}</Text></Pressable><Pressable style={styles.fileButton} onPress={() => void pick("image")}><Text style={styles.fileText}>{cover ? `CAPA · ${cover.name}` : "ESCOLHER CAPA · OPCIONAL"}</Text></Pressable><Pressable style={styles.checkRow} onPress={() => setRights(value => !value)}><View style={[styles.checkbox, rights && styles.checkboxActive]} /><Text style={styles.body}>Confirmo que tenho autorização para publicar este áudio e esta capa.</Text></Pressable><Pressable disabled={working || !audio || !title.trim() || !rights} style={[styles.primary, (working || !audio || !title.trim() || !rights) && styles.disabled]} onPress={() => void publish()}><Text style={styles.primaryText}>{working ? "ENVIANDO…" : "PUBLICAR FAIXA"}</Text></Pressable>{message ? <Text style={message.includes("enviada") ? styles.success : styles.error}>{message}</Text> : null}</View></Screen>;
 }
 
 const styles = StyleSheet.create({
@@ -58,6 +59,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: theme.surface, borderColor: theme.line, borderWidth: 1, borderRadius: 16, padding: 15, gap: 11 },
   cardTitle: { color: theme.text, fontSize: 19, fontWeight: "900" },
   input: { minHeight: 46, borderBottomWidth: 1, borderBottomColor: theme.line, color: theme.text, fontSize: 14, paddingHorizontal: 4 },
+  multiline: { minHeight: 100, paddingTop: 12 },
   fileButton: { borderWidth: 1, borderColor: theme.line, borderRadius: 11, padding: 13, backgroundColor: theme.surfaceRaised },
   fileText: { color: theme.coral, fontSize: 10, fontWeight: "900", letterSpacing: 0.5 },
   checkRow: { flexDirection: "row", gap: 10, alignItems: "center" },

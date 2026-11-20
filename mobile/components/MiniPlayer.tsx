@@ -21,7 +21,7 @@ export function MiniPlayer() {
   return (
     <View style={styles.shell} accessibilityLabel="Player persistente">
       <View style={styles.trackRow}>
-        <Pressable style={styles.trackInfo} onPress={() => router.push(`/track/${track.id}` as never)} accessibilityRole="button" accessibilityLabel={`Detalhes de ${track.title}`}>
+        <Pressable style={styles.trackInfo} onPress={() => router.push("/player" as never)} accessibilityRole="button" accessibilityLabel={`Abrir player ampliado de ${track.title}`}>
           {cover ? <Image source={{ uri: cover }} style={styles.cover} /> : <View style={[styles.cover, styles.coverFallback]}><Text style={styles.coverMark}>C.</Text></View>}
           <View style={styles.copy}>
             <Text numberOfLines={1} style={styles.title}>{track.title}</Text>

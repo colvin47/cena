@@ -19,6 +19,7 @@ export type Track = {
   releaseType?: string | null;
   description?: string | null;
   creditsNote?: string | null;
+  lyrics?: string | null;
 };
 
 export type Artist = {

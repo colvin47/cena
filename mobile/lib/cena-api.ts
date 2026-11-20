@@ -66,6 +66,6 @@ export async function uploadFile(token: string, input: { uri: string; fileName: 
   return data.stableUrl;
 }
 
-export function createTrack(token: string, input: { title: string; album?: string; genre?: string; city: string; description?: string; releaseType: "single" | "album" | "demo" | "live" | "split" | "compilation"; creditsNote?: string; coverUrl?: string; audioUrl: string; durationSeconds?: number; rightsDeclared: true }) {
+export function createTrack(token: string, input: { title: string; album?: string; genre?: string; city: string; description?: string; releaseType: "single" | "album" | "demo" | "live" | "split" | "compilation"; creditsNote?: string; lyrics?: string; coverUrl?: string; audioUrl: string; durationSeconds?: number; rightsDeclared: true }) {
   return mutateTrpc<{ persisted: boolean; id: number | null }>("scene.createTrack", input, token);
 }

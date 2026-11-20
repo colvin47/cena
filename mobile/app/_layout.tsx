@@ -31,8 +31,9 @@ export default function RootLayout() {
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="artist/[handle]" />
                   <Stack.Screen name="event/[id]" />
-                <Stack.Screen name="track/[id]" />
-                <Stack.Screen name="account" />
+                  <Stack.Screen name="track/[id]" />
+                  <Stack.Screen name="player" options={{ presentation: "modal" }} />
+                  <Stack.Screen name="account" />
                 <Stack.Screen name="modal" options={{ presentation: "modal" }} />
                 </Stack>
                 <MiniPlayer />
