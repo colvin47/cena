@@ -46,6 +46,9 @@ export async function getEventDetail(id: number) { return queryTrpc<SceneEvent |
 export async function getEventTickets(eventId: number) { return queryTrpc<EventTicket[]>("scene.eventTickets", { eventId }); }
 export async function getArtistMerchandise(artistId: number) { return queryTrpc<MerchandiseItem[]>("scene.artistMerchandise", { artistId }); }
 export async function getCurrentUser(token: string) { return queryTrpc<CenaUser | null>("auth.me", {}, token); }
+export type CenaCompliance = { adultVerified: boolean; emailVerified: boolean; email: string | null };
+export function getCompliance(token: string) { return queryTrpc<CenaCompliance | null>("auth.compliance", {}, token); }
+export function completeCompliance(token: string, dateOfBirth: string) { return mutateTrpc<{ persisted: boolean; adultVerified: boolean }>("auth.completeCompliance", { dateOfBirth }, token); }
 
 async function mutatePublic<T>(procedure: string, input: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${CENA_API_BASE_URL}/api/trpc/${procedure}`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ json: input }) });
