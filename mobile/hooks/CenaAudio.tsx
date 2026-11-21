@@ -18,6 +18,7 @@ type CenaAudioValue = {
   playPrevious: () => void;
   seekTo: (seconds: number) => void;
   removeFromQueue: (index: number) => void;
+  moveInQueue: (index: number, direction: "up" | "down") => void;
   clearQueue: () => void;
   clearPlayer: () => void;
 };
@@ -150,6 +151,19 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
     setQueueIndex(nextIndex);
   }, []);
 
+  const moveInQueue = useCallback((index: number, direction: "up" | "down") => {
+    const currentIndex = indexRef.current;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (index < 0 || index >= queueRef.current.length || index === currentIndex || targetIndex < 0 || targetIndex >= queueRef.current.length || targetIndex === currentIndex) return;
+    const nextQueue = [...queueRef.current];
+    [nextQueue[index], nextQueue[targetIndex]] = [nextQueue[targetIndex], nextQueue[index]];
+    const nextCurrentIndex = currentIndex === index ? targetIndex : currentIndex === targetIndex ? index : currentIndex;
+    queueRef.current = nextQueue;
+    indexRef.current = nextCurrentIndex;
+    setQueue(nextQueue);
+    setQueueIndex(nextCurrentIndex);
+  }, []);
+
   const clearQueue = useCallback(() => {
     const current = queueRef.current[indexRef.current] || currentTrack;
     const nextQueue = current ? [current] : [];
@@ -188,9 +202,10 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
     playPrevious,
     seekTo,
     removeFromQueue,
+    moveInQueue,
     clearQueue,
     clearPlayer,
-  }), [clearPlayer, clearQueue, currentTrack, error, playNext, playPrevious, playTrack, queue, queueIndex, removeFromQueue, seekTo, status.currentTime, status.duration, status.error, status.isBuffering, status.isLoaded, status.playing, togglePlayback]);
+  }), [clearPlayer, clearQueue, currentTrack, error, moveInQueue, playNext, playPrevious, playTrack, queue, queueIndex, removeFromQueue, seekTo, status.currentTime, status.duration, status.error, status.isBuffering, status.isLoaded, status.playing, togglePlayback]);
 
   return <CenaAudioContext.Provider value={value}>{children}</CenaAudioContext.Provider>;
 }
