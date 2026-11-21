@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { absoluteMediaUrl } from "@/lib/cena-api";
+import { absoluteMediaUrl, recordTrackPlay } from "@/lib/cena-api";
 import type { Track } from "@/lib/types";
 
 type CenaAudioValue = {
@@ -38,6 +38,8 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
   const queueRef = useRef<Track[]>([]);
   const indexRef = useRef(-1);
   const finishedRef = useRef(false);
+  const playSessionKeyRef = useRef<string | null>(null);
+  const playAttemptedKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     void setAudioModeAsync({
@@ -58,6 +60,9 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
     setError(null);
     setCurrentTrack(track);
     finishedRef.current = false;
+    const sessionKey = `${track.id}:${track.artistId}:${Boolean(track._demo)}`;
+    playSessionKeyRef.current = sessionKey;
+    playAttemptedKeyRef.current = null;
     player.replace({ uri: url, name: track.title });
     player.setActiveForLockScreen(true, {
       title: track.title,
@@ -66,6 +71,17 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
     });
     player.play();
   }, [player]);
+
+  useEffect(() => {
+    if (!currentTrack || currentTrack._demo || !Number.isSafeInteger(currentTrack.id)) return;
+    const sessionKey = `${currentTrack.id}:${currentTrack.artistId}:${Boolean(currentTrack._demo)}`;
+    if (playSessionKeyRef.current !== sessionKey || playAttemptedKeyRef.current === sessionKey) return;
+    const duration = status.duration || currentTrack.duration || 0;
+    const reachedThreshold = status.currentTime >= 30 || (duration > 0 && status.currentTime >= duration * 0.5);
+    if (!reachedThreshold) return;
+    playAttemptedKeyRef.current = sessionKey;
+    void recordTrackPlay(currentTrack.id).catch(() => undefined);
+  }, [currentTrack, status.currentTime, status.duration]);
 
   const playAt = useCallback((index: number) => {
     const next = queueRef.current[index];
@@ -152,6 +168,8 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
     setQueue([]);
     setQueueIndex(-1);
     setCurrentTrack(null);
+    playSessionKeyRef.current = null;
+    playAttemptedKeyRef.current = null;
     setError(null);
   }, [player]);
 

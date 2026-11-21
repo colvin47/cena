@@ -40,11 +40,18 @@ async function mutateTrpc<T>(procedure: string, input: Record<string, unknown>, 
 export function absoluteMediaUrl(value?: string | null) { if (!value) return undefined; if (/^https?:\/\//i.test(value)) return value; return `${CENA_API_BASE_URL}/${value.replace(/^\/+/, "")}`; }
 export function getDiscovery(input: { city: string; genre?: string; search?: string }) { return queryTrpc<DiscoveryResult>("scene.discovery", { city: input.city, genre: input.genre || "Tudo", search: input.search || "" }).then(result => ({ ...result, tracks: result.tracks.map(track => ({ ...track, _demo: result.source === "seed", handle: track.handle || result.artists.find(artist => artist.id === track.artistId)?.handle })) })); }
 export async function getTrackDetail(id: number) { return queryTrpc<Track | null>("scene.trackDetail", { id }); }
+export function recordTrackPlay(trackId: number) { return mutatePublic<{ recorded: boolean }>("scene.recordPlay", { trackId }); }
 export async function getArtistDetail(handle: string) { return queryTrpc<ArtistDetail | null>("scene.artistDetail", { handle }); }
 export async function getEventDetail(id: number) { return queryTrpc<SceneEvent | null>("scene.eventDetail", { id }); }
 export async function getEventTickets(eventId: number) { return queryTrpc<EventTicket[]>("scene.eventTickets", { eventId }); }
 export async function getArtistMerchandise(artistId: number) { return queryTrpc<MerchandiseItem[]>("scene.artistMerchandise", { artistId }); }
 export async function getCurrentUser(token: string) { return queryTrpc<CenaUser | null>("auth.me", {}, token); }
+
+async function mutatePublic<T>(procedure: string, input: Record<string, unknown>): Promise<T> {
+  const response = await fetch(`${CENA_API_BASE_URL}/api/trpc/${procedure}`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ json: input }) });
+  const envelope = await response.json() as TrpcEnvelope<T>;
+  return unwrap(envelope, response);
+}
 
 export async function exchangeMobileTicket(ticket: string, state: string) {
   const response = await fetch(`${CENA_API_BASE_URL}/api/oauth/mobile/exchange`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ ticket, state }) });
