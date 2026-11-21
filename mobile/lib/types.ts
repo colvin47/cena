@@ -98,3 +98,39 @@ export type MerchandiseItem = {
 };
 
 export type ArtistDetail = { artist: Artist; tracks: Track[]; events: SceneEvent[] };
+
+export type CreatorProfile = Artist & { updatedAt?: string | Date | null };
+
+export type CreatorTrack = {
+  id: number;
+  title: string;
+  album?: string | null;
+  genre?: string | null;
+  city?: string | null;
+  description?: string | null;
+  releaseType?: string | null;
+  creditsNote?: string | null;
+  lyrics?: string | null;
+  coverUrl?: string | null;
+  audioUrl?: string | null;
+  durationSeconds?: number | null;
+  moderationStatus: "published" | "pending_review" | "takedown" | string;
+  takedownReason?: string | null;
+  removedAt?: string | Date | null;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
+};
+
+export type CreatorEvent = SceneEvent & { name?: string | null; venue?: string | null };
+
+export type CreatorMerchandise = MerchandiseItem & { createdAt?: string | Date | null; updatedAt?: string | Date | null };
+
+export type CreatorStats = {
+  plays: number;
+  playsLast30Days: number;
+  uniqueListeners: number;
+  listenerCities: Array<{ city?: string | null; listeners: number }>;
+  followers: number;
+  events: Array<{ id: number; name: string; interest: number }>;
+  topTracks: Array<{ id: number; title: string; plays: number }>;
+};

@@ -1,4 +1,4 @@
-import type { ArtistDetail, DiscoveryResult, EventTicket, MerchandiseItem, SceneEvent, Track } from "./types";
+import type { ArtistDetail, CreatorEvent, CreatorMerchandise, CreatorProfile, CreatorStats, CreatorTrack, DiscoveryResult, EventTicket, MerchandiseItem, SceneEvent, Track } from "./types";
 
 const configuredBaseUrl = process.env.EXPO_PUBLIC_CENA_API_BASE_URL?.trim();
 export const CENA_API_BASE_URL = (configuredBaseUrl || "https://cenaapp-rgtrg8wt.manus.space").replace(/\/+$/, "");
@@ -69,3 +69,12 @@ export async function uploadFile(token: string, input: { uri: string; fileName: 
 export function createTrack(token: string, input: { title: string; album?: string; genre?: string; city: string; description?: string; releaseType: "single" | "album" | "demo" | "live" | "split" | "compilation"; creditsNote?: string; lyrics?: string; coverUrl?: string; audioUrl: string; durationSeconds?: number; rightsDeclared: true }) {
   return mutateTrpc<{ persisted: boolean; id: number | null }>("scene.createTrack", input, token);
 }
+
+export function getCreatorProfile(token: string) { return queryTrpc<CreatorProfile | null>("scene.myArtistProfile", {}, token); }
+export function getCreatorStats(token: string) { return queryTrpc<CreatorStats | null>("scene.artistStats", {}, token); }
+export function getCreatorEvents(token: string) { return queryTrpc<CreatorEvent[]>("scene.myEvents", {}, token); }
+export function getCreatorTracks(token: string) { return queryTrpc<CreatorTrack[]>("scene.myTracks", {}, token); }
+export function getCreatorMerchandise(token: string) { return queryTrpc<CreatorMerchandise[]>("scene.myMerchandise", {}, token); }
+export function createMerchandise(token: string, input: { title: string; description?: string; price: string; stock: number; externalUrl?: string }) { return mutateTrpc<{ persisted: boolean; item: CreatorMerchandise }>("scene.createMerchandise", input, token); }
+export function updateMerchandise(token: string, input: { id: number; title: string; description?: string; price: string; stock: number; externalUrl?: string }) { return mutateTrpc<{ persisted: boolean; item: CreatorMerchandise }>("scene.updateMerchandise", input, token); }
+export function deleteMerchandise(token: string, id: number) { return mutateTrpc<{ deleted: boolean }>("scene.deleteMerchandise", { id }, token); }
