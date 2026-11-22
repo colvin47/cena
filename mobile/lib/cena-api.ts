@@ -4,7 +4,7 @@ const configuredBaseUrl = process.env.EXPO_PUBLIC_CENA_API_BASE_URL?.trim();
 export const CENA_API_BASE_URL = (configuredBaseUrl || "https://cenaapp-rgtrg8wt.manus.space").replace(/\/+$/, "");
 const REQUEST_TIMEOUT_MS = 15_000;
 type TrpcEnvelope<T> = { result?: { data?: { json?: T } | T }; error?: { json?: { message?: string }; message?: string } };
-export type CenaUser = { id: number; name?: string | null; email?: string | null; accountType?: "listener" | "artist" | null };
+export type CenaUser = { id: number; name?: string | null; email?: string | null; accountType?: "listener" | "artist" | null; city?: string | null; favoriteGenres?: string | null; publicBio?: string | null };
 
 function unwrap<T>(envelope: TrpcEnvelope<T>, response: Response) {
   const errorMessage = envelope.error?.json?.message || envelope.error?.message;
@@ -49,6 +49,7 @@ export async function getCurrentUser(token: string) { return queryTrpc<CenaUser 
 export type CenaCompliance = { adultVerified: boolean; emailVerified: boolean; email: string | null };
 export function getCompliance(token: string) { return queryTrpc<CenaCompliance | null>("auth.compliance", {}, token); }
 export function completeCompliance(token: string, dateOfBirth: string) { return mutateTrpc<{ persisted: boolean; adultVerified: boolean }>("auth.completeCompliance", { dateOfBirth }, token); }
+export function updateListenerProfile(token: string, input: { city: string; favoriteGenres?: string; publicBio?: string }) { return mutateTrpc<{ persisted: boolean }>("auth.updateListenerProfile", input, token); }
 
 async function mutatePublic<T>(procedure: string, input: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${CENA_API_BASE_URL}/api/trpc/${procedure}`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ json: input }) });
@@ -85,6 +86,7 @@ export function getCreatorStats(token: string) { return queryTrpc<CreatorStats |
 export function getCreatorEvents(token: string) { return queryTrpc<CreatorEvent[]>("scene.myEvents", {}, token); }
 export function getCreatorTracks(token: string) { return queryTrpc<CreatorTrack[]>("scene.myTracks", {}, token); }
 export function getCreatorMerchandise(token: string) { return queryTrpc<CreatorMerchandise[]>("scene.myMerchandise", {}, token); }
+export function createArtistProfile(token: string, input: { name: string; handle: string; city: string; profileType?: string; genre?: string; bio?: string; manifesto?: string; supportUrl?: string; pixUrl?: string; merchUrl?: string }) { return mutateTrpc<{ persisted: boolean; profile: CreatorProfile | null }>("scene.createArtistProfile", input, token); }
 export function updateCreatorProfile(token: string, input: { name: string; handle: string; city: string; profileType?: string; genre?: string; bio?: string; manifesto?: string; instagramUrl?: string; bandcampUrl?: string; supportUrl?: string; pixUrl?: string; merchUrl?: string }) { return mutateTrpc<{ persisted: boolean; profile: CreatorProfile }>("scene.updateArtistProfile", input, token); }
 export type CreatorEventInput = { id?: number; name: string; venue: string; city: string; eventDate: string; eventType?: string; admissionType?: string; description?: string; program?: string; accessibility?: string; safeSpace?: boolean; ageRating?: string; ticketUrl?: string };
 export function createCreatorEvent(token: string, input: Omit<CreatorEventInput, "id">) { return mutateTrpc<{ persisted: boolean; id: number }>("scene.createEvent", input, token); }
