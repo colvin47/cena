@@ -32,9 +32,21 @@ async function queryTrpc<T>(procedure: string, input: Record<string, unknown>, t
 }
 
 async function mutateTrpc<T>(procedure: string, input: Record<string, unknown>, token: string): Promise<T> {
-  const response = await fetch(`${CENA_API_BASE_URL}/api/trpc/${procedure}`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ json: input }) });
-  const envelope = await response.json() as TrpcEnvelope<T>;
-  return unwrap(envelope, response);
+  try {
+    const response = await fetchWithTimeout(`${CENA_API_BASE_URL}/api/trpc/${procedure}`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ json: input }) });
+    const envelope = await response.json() as TrpcEnvelope<T>;
+    return unwrap(envelope, response);
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw new Error("A conexão com o CENA demorou demais. Tente novamente.");
+    throw error;
+  }
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try { return await fetch(input, { ...init, signal: controller.signal }); }
+  finally { clearTimeout(timeout); }
 }
 
 export function absoluteMediaUrl(value?: string | null) { if (!value) return undefined; if (/^https?:\/\//i.test(value)) return value; return `${CENA_API_BASE_URL}/${value.replace(/^\/+/, "")}`; }
@@ -52,16 +64,26 @@ export function completeCompliance(token: string, dateOfBirth: string) { return 
 export function updateListenerProfile(token: string, input: { city: string; favoriteGenres?: string; publicBio?: string }) { return mutateTrpc<{ persisted: boolean }>("auth.updateListenerProfile", input, token); }
 
 async function mutatePublic<T>(procedure: string, input: Record<string, unknown>): Promise<T> {
-  const response = await fetch(`${CENA_API_BASE_URL}/api/trpc/${procedure}`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ json: input }) });
-  const envelope = await response.json() as TrpcEnvelope<T>;
-  return unwrap(envelope, response);
+  try {
+    const response = await fetchWithTimeout(`${CENA_API_BASE_URL}/api/trpc/${procedure}`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ json: input }) });
+    const envelope = await response.json() as TrpcEnvelope<T>;
+    return unwrap(envelope, response);
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw new Error("A conexão com o CENA demorou demais. Tente novamente.");
+    throw error;
+  }
 }
 
 export async function exchangeMobileTicket(ticket: string, state: string) {
-  const response = await fetch(`${CENA_API_BASE_URL}/api/oauth/mobile/exchange`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ ticket, state }) });
-  const data = await response.json() as { accessToken?: string; tokenType?: string; expiresIn?: number; user?: CenaUser | null; error?: string };
-  if (!response.ok || !data.accessToken) throw new Error(data.error || "Não foi possível concluir o login.");
-  return data as { accessToken: string; tokenType: string; expiresIn: number; user: CenaUser | null };
+  try {
+    const response = await fetchWithTimeout(`${CENA_API_BASE_URL}/api/oauth/mobile/exchange`, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ ticket, state }) });
+    const data = await response.json() as { accessToken?: string; tokenType?: string; expiresIn?: number; user?: CenaUser | null; error?: string };
+    if (!response.ok || !data.accessToken) throw new Error(data.error || "Não foi possível concluir o login.");
+    return data as { accessToken: string; tokenType: string; expiresIn: number; user: CenaUser | null };
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw new Error("O login demorou demais. Tente novamente.");
+    throw error;
+  }
 }
 
 export function requestUpload(token: string, input: { kind: "audio" | "image"; fileName: string; contentType: string; size: number }) {
@@ -69,12 +91,18 @@ export function requestUpload(token: string, input: { kind: "audio" | "image"; f
 }
 
 export async function uploadFile(token: string, input: { uri: string; fileName: string; contentType: string; kind: "audio" | "image"; uploadId: string }) {
-  const fileResponse = await fetch(input.uri);
+  const fileResponse = await fetchWithTimeout(input.uri);
+  if (!fileResponse.ok) throw new Error("Não foi possível ler o arquivo selecionado.");
   const body = await fileResponse.blob();
-  const response = await fetch(`${CENA_API_BASE_URL}/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": input.contentType, "x-cena-kind": input.kind, "x-cena-file-name": encodeURIComponent(input.fileName), "x-cena-upload-id": input.uploadId }, body });
-  const data = await response.json().catch(() => ({})) as { stableUrl?: string; error?: string };
-  if (!response.ok || !data.stableUrl) throw new Error(data.error || "Não foi possível enviar o arquivo.");
-  return data.stableUrl;
+  try {
+    const response = await fetchWithTimeout(`${CENA_API_BASE_URL}/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": input.contentType, "x-cena-kind": input.kind, "x-cena-file-name": encodeURIComponent(input.fileName), "x-cena-upload-id": input.uploadId }, body });
+    const data = await response.json().catch(() => ({})) as { stableUrl?: string; error?: string };
+    if (!response.ok || !data.stableUrl) throw new Error(data.error || "Não foi possível enviar o arquivo.");
+    return data.stableUrl;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw new Error("O envio demorou demais. Tente novamente.");
+    throw error;
+  }
 }
 
 export function createTrack(token: string, input: { title: string; album?: string; genre?: string; city: string; description?: string; releaseType: "single" | "album" | "demo" | "live" | "split" | "compilation"; creditsNote?: string; lyrics?: string; coverUrl?: string; audioUrl: string; durationSeconds?: number; rightsDeclared: true }) {

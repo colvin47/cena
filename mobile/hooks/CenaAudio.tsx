@@ -55,6 +55,10 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
   const loadTrack = useCallback((track: Track) => {
     const url = absoluteMediaUrl(track.audioUrl || track.externalUrl);
     if (!url || !/^https?:\/\//i.test(url)) {
+      player.pause();
+      setCurrentTrack(null);
+      playSessionKeyRef.current = null;
+      playAttemptedKeyRef.current = null;
       setError("Esta faixa não possui um endereço de áudio disponível.");
       return;
     }
@@ -78,11 +82,11 @@ export function CenaAudioProvider({ children }: { children: ReactNode }) {
     const sessionKey = `${currentTrack.id}:${currentTrack.artistId}:${Boolean(currentTrack._demo)}`;
     if (playSessionKeyRef.current !== sessionKey || playAttemptedKeyRef.current === sessionKey) return;
     const duration = status.duration || currentTrack.duration || 0;
-    const reachedThreshold = status.currentTime >= 30 || (duration > 0 && status.currentTime >= duration * 0.5);
+    const reachedThreshold = status.currentTime >= 30 || (duration > 0 && status.currentTime >= duration * 0.5) || Boolean(status.didJustFinish);
     if (!reachedThreshold) return;
     playAttemptedKeyRef.current = sessionKey;
     void recordTrackPlay(currentTrack.id).catch(() => undefined);
-  }, [currentTrack, status.currentTime, status.duration]);
+  }, [currentTrack, status.currentTime, status.duration, status.didJustFinish]);
 
   const playAt = useCallback((index: number) => {
     const next = queueRef.current[index];
