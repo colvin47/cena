@@ -17,6 +17,8 @@ export type Track = {
   _demo?: boolean;
   album?: string | null;
   releaseType?: string | null;
+  visibility?: "public" | "private" | null;
+  releaseDate?: string | Date | null;
   description?: string | null;
   creditsNote?: string | null;
   lyrics?: string | null;
@@ -97,7 +99,8 @@ export type MerchandiseItem = {
   externalUrl?: string | null;
 };
 
-export type ArtistDetail = { artist: Artist; tracks: Track[]; events: SceneEvent[] };
+export type Release = { key: string; title: string; releaseType: string; coverUrl?: string | null; tracks: Track[] };
+export type ArtistDetail = { artist: Artist; tracks: Track[]; releases?: Release[]; events: SceneEvent[] };
 
 export type CreatorProfile = Artist & { updatedAt?: string | Date | null };
 
@@ -109,6 +112,8 @@ export type CreatorTrack = {
   city?: string | null;
   description?: string | null;
   releaseType?: string | null;
+  visibility?: "public" | "private" | null;
+  releaseDate?: string | Date | null;
   creditsNote?: string | null;
   lyrics?: string | null;
   coverUrl?: string | null;

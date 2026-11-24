@@ -105,7 +105,7 @@ export async function uploadFile(token: string, input: { uri: string; fileName: 
   }
 }
 
-export function createTrack(token: string, input: { title: string; album?: string; genre?: string; city: string; description?: string; releaseType: "single" | "album" | "demo" | "live" | "split" | "compilation"; creditsNote?: string; lyrics?: string; coverUrl?: string; audioUrl: string; durationSeconds?: number; rightsDeclared: true }) {
+export function createTrack(token: string, input: { title: string; album?: string; genre?: string; city: string; description?: string; releaseType: "single" | "ep" | "album" | "demo" | "live" | "split" | "compilation"; visibility?: "public" | "private"; releaseDate?: string | null; creditsNote?: string; lyrics?: string; coverUrl?: string; audioUrl: string; durationSeconds?: number; rightsDeclared: true }) {
   return mutateTrpc<{ persisted: boolean; id: number | null }>("scene.createTrack", input, token);
 }
 
@@ -113,9 +113,13 @@ export function getCreatorProfile(token: string) { return queryTrpc<CreatorProfi
 export function getCreatorStats(token: string) { return queryTrpc<CreatorStats | null>("scene.artistStats", {}, token); }
 export function getCreatorEvents(token: string) { return queryTrpc<CreatorEvent[]>("scene.myEvents", {}, token); }
 export function getCreatorTracks(token: string) { return queryTrpc<CreatorTrack[]>("scene.myTracks", {}, token); }
+export function getCreatorReleases(token: string) { return queryTrpc<import("./types").Release[]>("scene.myReleases", {}, token); }
 export function getCreatorMerchandise(token: string) { return queryTrpc<CreatorMerchandise[]>("scene.myMerchandise", {}, token); }
 export function createArtistProfile(token: string, input: { name: string; handle: string; city: string; profileType?: string; genre?: string; bio?: string; manifesto?: string; supportUrl?: string; pixUrl?: string; merchUrl?: string }) { return mutateTrpc<{ persisted: boolean; profile: CreatorProfile | null }>("scene.createArtistProfile", input, token); }
 export function updateCreatorProfile(token: string, input: { name: string; handle: string; city: string; profileType?: string; genre?: string; bio?: string; manifesto?: string; instagramUrl?: string; bandcampUrl?: string; supportUrl?: string; pixUrl?: string; merchUrl?: string }) { return mutateTrpc<{ persisted: boolean; profile: CreatorProfile }>("scene.updateArtistProfile", input, token); }
+export function updateTrack(token: string, input: { id: number; title: string; album?: string; genre?: string; city: string; description?: string; releaseType: "single" | "ep" | "album" | "demo" | "live" | "split" | "compilation"; creditsNote?: string; lyrics?: string; coverUrl?: string; visibility: "public" | "private"; releaseDate?: string | null }) { return mutateTrpc<{ persisted: boolean; track: CreatorTrack }>("scene.updateTrack", input, token); }
+export function takedownCreatorTrack(token: string, trackId: number, reason?: string) { return mutateTrpc<{ removed: boolean }>("scene.takedownTrack", { trackId, reason }, token); }
+export function deleteArtistProfile(token: string) { return mutateTrpc<{ deleted: boolean; accountType: "listener" }>("scene.deleteArtistProfile", {}, token); }
 export type CreatorEventInput = { id?: number; name: string; venue: string; city: string; eventDate: string; eventType?: string; admissionType?: string; description?: string; program?: string; accessibility?: string; safeSpace?: boolean; ageRating?: string; ticketUrl?: string };
 export function createCreatorEvent(token: string, input: Omit<CreatorEventInput, "id">) { return mutateTrpc<{ persisted: boolean; id: number }>("scene.createEvent", input, token); }
 export function updateCreatorEvent(token: string, input: CreatorEventInput & { id: number }) { return mutateTrpc<{ persisted: boolean; event: CreatorEvent }>("scene.updateEvent", input, token); }

@@ -89,6 +89,7 @@ export default function ArtistDetailScreen() {
         </View>
 
         {!!tracks.length && <View style={styles.section}><Text style={styles.sectionTitle}>Faixas</Text>{tracks.map(track => <TrackCard key={`${track.id}-${track.artistId}`} track={track} queue={tracks} />)}</View>}
+        {!!detail?.releases?.length && <View style={styles.section}><Text style={styles.sectionTitle}>Discografia</Text>{detail.releases.map(release => <View key={release.key} style={styles.releaseCard}><Text style={styles.releaseTitle}>{release.title}</Text><Text style={styles.body}>{release.releaseType.toUpperCase()} · {release.tracks.length} faixa{release.tracks.length === 1 ? "" : "s"}</Text><Text style={styles.caption}>{release.tracks.map(track => track.title).join(" · ")}</Text></View>)}</View>}
 
         {!!detail?.events.length && <View style={styles.section}><Text style={styles.sectionTitle}>Agenda</Text>{detail.events.filter(event => !event.canceledAt).map(event => <Pressable key={event.id} onPress={() => router.push(`/event/${event.id}` as never)} style={styles.eventCard}><Text style={styles.eventTitle}>{event.title}</Text><Text style={styles.body}>{event.place || "Local a confirmar"} · {event.city || artist.city || ""}</Text></Pressable>)}</View>}
 
@@ -124,6 +125,9 @@ const styles = StyleSheet.create({
   error: { padding: 15, borderRadius: 15, backgroundColor: theme.surface, gap: 7 },
   section: { gap: 9 },
   sectionTitle: { color: theme.text, fontSize: 17, fontWeight: "900" },
+  releaseCard: { padding: 13, gap: 5, borderRadius: 14, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface },
+  releaseTitle: { color: theme.text, fontSize: 14, fontWeight: "900" },
+  caption: { color: theme.muted, fontSize: 10, lineHeight: 15 },
   eventCard: { padding: 13, gap: 6, borderRadius: 13, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.line },
   eventTitle: { color: theme.text, fontSize: 13, fontWeight: "800" },
   product: { padding: 13, gap: 7, borderRadius: 14, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface },
